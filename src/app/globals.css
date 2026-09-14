@@ -1,0 +1,110 @@
+@import "tailwindcss";
+
+/*
+ * Identidade oficial InterEng Alagoas (fonte: InterEng Assets/Paleta de Cores.jpeg).
+ * --gold-dark é a cor de bronze oficial (#B5650D); --gold é o laranja oficial (#E88E34);
+ * --gold-soft é um tint derivado (não faz parte da paleta original) só para hovers/glow.
+ * --surface-elevated e --border também são derivados do navy oficial para dar hierarquia
+ * visual, já que a paleta só define dois tons de navy.
+ */
+:root {
+  --background: #040b2b;
+  --surface: #00106a;
+  --surface-elevated: #1f2d7c;
+  --foreground: #e5e5e5;
+  --muted: #9aa3c9;
+  --border: #0f1e73;
+  --gold: #e88e34;
+  --gold-soft: #eeaa67;
+  --gold-dark: #b5650d;
+  --danger: #d15a4a;
+  --success: #4fae6f;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-gold: var(--gold);
+  --color-gold-soft: var(--gold-soft);
+  --color-gold-dark: var(--gold-dark);
+  --color-danger: var(--danger);
+  --color-success: var(--success);
+  --font-sans: var(--font-inter);
+  --font-heading: var(--font-oswald);
+  --font-display: var(--font-caesar);
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  background-image:
+    linear-gradient(rgba(4, 11, 43, 0.82), rgba(4, 11, 43, 0.92)),
+    url("/textures/grunge.webp");
+  background-size: cover, 700px 700px;
+  background-repeat: no-repeat, repeat;
+  background-position: center top, center top;
+}
+
+::selection {
+  background-color: var(--gold);
+  color: #14120a;
+}
+
+.font-heading {
+  font-family: var(--font-heading), var(--font-sans), system-ui, sans-serif;
+}
+
+.font-display {
+  font-family: var(--font-display), var(--font-heading), var(--font-sans), system-ui, sans-serif;
+  letter-spacing: 0.03em;
+}
+
+.text-gradient-gold {
+  background: linear-gradient(120deg, var(--gold-soft), var(--gold) 45%, var(--gold-dark));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.steel-border {
+  border: 1px solid var(--border);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+@keyframes reveal-fade {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.reveal-in {
+  animation: reveal-fade 0.4s ease-out;
+}
+
+@keyframes pulse-slot {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+.reveal-pending {
+  animation: pulse-slot 1.4s ease-in-out infinite;
+}

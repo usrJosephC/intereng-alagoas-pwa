@@ -1,0 +1,180 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  MEMBER
+}
+
+enum Sport {
+  VOLEI
+  BASQUETE
+  FUTSAL
+  HANDEBOL
+}
+
+enum MatchPhase {
+  GRUPOS
+  QUARTAS
+  SEMI
+  TERCEIRO
+  FINAL
+}
+
+enum MatchStatus {
+  AGENDADO
+  AO_VIVO
+  ENCERRADO
+  ADIADO
+}
+
+/// Conta de acesso (torcida/atleta ou diretoria). `role` decide o acesso ao /admin.
+model User {
+  id           String     @id @default(cuid())
+  name         String
+  email        String     @unique
+  passwordHash String
+  role         Role       @default(MEMBER)
+  atletica     Atletica?  @relation(fields: [atleticaId], references: [id])
+  atleticaId   String?
+  avatarUrl    String?
+  createdAt    DateTime   @default(now())
+  posts        Post[]
+  postLikes    PostLike[]
+  comments     Comment[]
+
+  @@index([atleticaId])
+}
+
+/// Atlética participante do InterEng. Cadastro central; a inscrição por esporte
+/// vira um registro em `Team`.
+model Atletica {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  shortName String?
+  logoUrl   String?
+  createdAt DateTime @default(now())
+  teams     Team[]
+  torcida   User[]
+}
+
+/// Inscrição de uma atlética num esporte específico (uma atlética pode não
+/// disputar todos os 4 esportes).
+model Team {
+  id         String      @id @default(cuid())
+  atletica   Atletica    @relation(fields: [atleticaId], references: [id], onDelete: Cascade)
+  atleticaId String
+  sport      Sport
+  createdAt  DateTime    @default(now())
+  groupTeams GroupTeam[]
+  matchesA   Match[]     @relation("MatchTeamA")
+  matchesB   Match[]     @relation("MatchTeamB")
+
+  @@unique([atleticaId, sport])
+  @@index([sport])
+}
+
+/// Local reutilizável (ginásio/quadra) para os jogos.
+model Venue {
+  id      String  @id @default(cuid())
+  name    String  @unique
+  address String?
+  matches Match[]
+}
+
+/// Grupo de um sorteio, escopado por esporte.
+model Group {
+  id        String      @id @default(cuid())
+  sport     Sport
+  name      String
+  createdAt DateTime    @default(now())
+  teams     GroupTeam[]
+  matches   Match[]
+
+  @@index([sport])
+}
+
+model GroupTeam {
+  group   Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId String
+  team    Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  teamId  String
+  /// Posição em que o time foi sorteado dentro do grupo (0 = cabeça de grupo);
+  /// usado para animar a revelação do sorteio em ordem (suspense na live).
+  order   Int    @default(0)
+
+  @@id([groupId, teamId])
+}
+
+/// Partida. Fora da fase de grupos (`GRUPOS`), `groupId` é nulo e os times do
+/// mata-mata são escolhidos manualmente pelo admin a partir da classificação.
+model Match {
+  id        String      @id @default(cuid())
+  sport     Sport
+  phase     MatchPhase  @default(GRUPOS)
+  group     Group?      @relation(fields: [groupId], references: [id])
+  groupId   String?
+  teamA     Team        @relation("MatchTeamA", fields: [teamAId], references: [id])
+  teamAId   String
+  teamB     Team        @relation("MatchTeamB", fields: [teamBId], references: [id])
+  teamBId   String
+  /// Placar genérico: gols (futsal/handebol), pontos (basquete) ou sets vencidos 0-3 (vôlei).
+  scoreA    Int?
+  scoreB    Int?
+  venue     Venue?      @relation(fields: [venueId], references: [id])
+  venueId   String?
+  matchDate DateTime
+  status    MatchStatus @default(AGENDADO)
+  createdAt DateTime    @default(now())
+  comments  Comment[]
+
+  @@index([sport])
+  @@index([matchDate])
+  @@index([status])
+  @@index([groupId])
+}
+
+/// Post do mural da comunidade.
+model Post {
+  id        String     @id @default(cuid())
+  author    User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId  String
+  content   String
+  imageUrl  String?
+  createdAt DateTime   @default(now())
+  likes     PostLike[]
+  comments  Comment[]
+
+  @@index([authorId])
+}
+
+model PostLike {
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+
+  @@id([postId, userId])
+}
+
+/// Comentário: exatamente um de `postId`/`matchId` é preenchido (validado na
+/// camada de aplicação, ver src/lib/schemas.ts).
+model Comment {
+  id        String   @id @default(cuid())
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId  String
+  post      Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId    String?
+  match     Match?   @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  matchId   String?
+  content   String
+  createdAt DateTime @default(now())
+
+  @@index([postId])
+  @@index([matchId])
+}

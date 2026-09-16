@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { SPORT_LABELS, PHASE_LABELS, STATUS_LABELS } from "@/lib/sports";
+import { canAccessAdmin } from "@/lib/roles";
+import { SPORT_LABELS, CATEGORY_LABELS, PHASE_LABELS, STATUS_LABELS } from "@/lib/sports";
 import { formatDateTimeBR } from "@/lib/datetime";
 import { CommentSection } from "@/components/comments/comment-section";
 
@@ -33,7 +34,7 @@ export default async function MatchDetailPage({
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
       <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-        {SPORT_LABELS[match.sport]} · {PHASE_LABELS[match.phase]} ·{" "}
+        {SPORT_LABELS[match.sport]} {CATEGORY_LABELS[match.category]} · {PHASE_LABELS[match.phase]} ·{" "}
         {STATUS_LABELS[match.status]}
       </p>
 
@@ -67,7 +68,7 @@ export default async function MatchDetailPage({
               createdAt: c.createdAt.toISOString(),
             }))}
             loggedIn={!!session}
-            canModerate={session?.role === "ADMIN"}
+            canModerate={!!session && canAccessAdmin(session.role)}
           />
         </div>
       </div>

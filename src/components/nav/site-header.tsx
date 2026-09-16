@@ -1,7 +1,25 @@
 import Link from "next/link";
 import { getSession } from "@/lib/auth";
+import { canAccessAdmin } from "@/lib/roles";
 import { LogoMark } from "./logo-mark";
 import { LogoutButton } from "./logout-button";
+
+function UserIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <circle cx="12" cy="8" r="3.5" />
+      <path d="M4.5 20c1.4-3.8 4.4-5.8 7.5-5.8s6.1 2 7.5 5.8" />
+    </svg>
+  );
+}
 
 export async function SiteHeader() {
   const session = await getSession();
@@ -25,9 +43,14 @@ export async function SiteHeader() {
         <Link href="/comunidade" className="hover:text-gold">
           Comunidade
         </Link>
-        {session?.role === "ADMIN" && (
+        {session && canAccessAdmin(session.role) && (
           <Link href="/admin" className="hover:text-gold">
-            Diretoria
+            Painel
+          </Link>
+        )}
+        {session?.role === "SUMULA" && (
+          <Link href="/admin/sumula" className="hover:text-gold">
+            Súmula
           </Link>
         )}
       </nav>
@@ -35,7 +58,14 @@ export async function SiteHeader() {
       <div className="hidden items-center gap-3 sm:flex">
         {session ? (
           <>
-            <span className="text-xs text-muted">{session.name}</span>
+            <Link
+              href="/perfil"
+              title="Editar perfil"
+              className="flex items-center gap-1.5 text-xs text-muted hover:text-gold hover:underline"
+            >
+              <UserIcon className="h-4 w-4" />
+              {session.name}
+            </Link>
             <LogoutButton />
           </>
         ) : (
@@ -57,7 +87,12 @@ export async function SiteHeader() {
       </div>
 
       {session ? (
-        <Link href="/comunidade" className="sm:hidden text-xs font-semibold text-gold">
+        <Link
+          href="/perfil"
+          title="Editar perfil"
+          className="sm:hidden flex items-center gap-1 text-xs font-semibold text-gold"
+        >
+          <UserIcon className="h-4 w-4" />
           {session.name.split(" ")[0]}
         </Link>
       ) : (

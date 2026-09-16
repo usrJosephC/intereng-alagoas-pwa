@@ -2,19 +2,26 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { groupDrawSchema } from "@/lib/schemas";
-import { SPORTS } from "@/lib/sports";
+import { SPORTS, CATEGORIES } from "@/lib/sports";
 import { distribuirEmGrupos, nomeDoGrupo } from "@/lib/sorteio";
-import type { Sport } from "@prisma/client";
+import type { Category, Sport } from "@prisma/client";
 
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null);
   const sport = body?.sport as Sport | undefined;
+  const category = body?.category as Category | undefined;
   const parsed = groupDrawSchema.safeParse(body);
-  if (!parsed.success || !sport || !SPORTS.includes(sport)) {
+  if (
+    !parsed.success ||
+    !sport ||
+    !SPORTS.includes(sport) ||
+    !category ||
+    !CATEGORIES.includes(category)
+  ) {
     return NextResponse.json({ error: "Dados inválidos." }, { status: 400 });
   }
 
-  const teams = await prisma.team.findMany({ where: { sport }, select: { id: true } });
+  const teams = await prisma.team.findMany({ where: { sport, category }, select: { id: true } });
   if (teams.length < parsed.data.groupCount) {
     return NextResponse.json(
       { error: "Número de grupos maior que o número de times inscritos." },
@@ -22,12 +29,15 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const existingGroups = await prisma.group.findMany({ where: { sport }, select: { id: true } });
+  const existingGroups = await prisma.group.findMany({
+    where: { sport, category },
+    select: { id: true },
+  });
 
   try {
     await prisma.$transaction(async (tx) => {
       if (existingGroups.length > 0) {
-        await tx.group.deleteMany({ where: { sport } });
+        await tx.group.deleteMany({ where: { sport, category } });
       }
 
       const groupedTeams = distribuirEmGrupos(
@@ -39,6 +49,7 @@ export async function POST(request: NextRequest) {
         await tx.group.create({
           data: {
             sport,
+            category,
             name: nomeDoGrupo(i),
             teams: {
               create: groupedTeams[i].map((teamId, order) => ({ teamId, order })),
@@ -58,7 +69,7 @@ export async function POST(request: NextRequest) {
   }
 
   const groups = await prisma.group.findMany({
-    where: { sport },
+    where: { sport, category },
     orderBy: { name: "asc" },
     include: {
       teams: { orderBy: { order: "asc" }, include: { team: { include: { atletica: true } } } },

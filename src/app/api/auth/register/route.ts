@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { registerSchema } from "@/lib/schemas";
 import { SESSION_COOKIE, sessionCookieOptions, createSessionToken, hashPassword } from "@/lib/auth";
+import { dateOnlyInputToDate } from "@/lib/datetime";
 
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null);
@@ -11,7 +12,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Dados inválidos." }, { status: 400 });
   }
 
-  const { name, email, password, atleticaId } = parsed.data;
+  const { name, email, password, atleticaId, phone, birthDate, city, course, institution, sponsorConsent } =
+    parsed.data;
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
@@ -25,6 +27,12 @@ export async function POST(request: NextRequest) {
       email,
       passwordHash,
       atleticaId: atleticaId ? atleticaId : null,
+      phone: phone || null,
+      birthDate: birthDate ? dateOnlyInputToDate(birthDate) : null,
+      city: city || null,
+      course: course || null,
+      institution: institution || null,
+      sponsorConsent: sponsorConsent ?? false,
     },
   });
 

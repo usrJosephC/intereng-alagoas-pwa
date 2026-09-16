@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Sport } from "@prisma/client";
+import type { Category, Sport } from "@prisma/client";
 import { inputClass, smallButtonClass } from "@/lib/ui";
 import { Button } from "@/components/ui/button";
 
@@ -10,10 +10,12 @@ type Team = { id: string; atletica: Atletica };
 
 export function TimesManager({
   sport,
+  category,
   initialTeams,
   allAtleticas,
 }: {
   sport: Sport;
+  category: Category;
   initialTeams: Team[];
   allAtleticas: Atletica[];
 }) {
@@ -34,7 +36,7 @@ export function TimesManager({
       const res = await fetch("/api/admin/teams", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sport, atleticaId }),
+        body: JSON.stringify({ sport, category, atleticaId }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Não foi possível inscrever.");

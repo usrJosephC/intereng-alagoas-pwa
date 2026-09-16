@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
+import { canAccessAdmin } from "@/lib/roles";
 import { CommunityFeed } from "@/components/community/community-feed";
 
 export const metadata = { title: "Comunidade" };
@@ -42,7 +43,7 @@ export default async function ComunidadePage() {
         <CommunityFeed
           initialPosts={postsData}
           loggedIn={!!session}
-          canModerate={session?.role === "ADMIN"}
+          canModerate={!!session && canAccessAdmin(session.role)}
         />
       </div>
     </div>

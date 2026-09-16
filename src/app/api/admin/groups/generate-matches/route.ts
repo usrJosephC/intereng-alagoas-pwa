@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { SPORTS } from "@/lib/sports";
+import { SPORTS, CATEGORIES } from "@/lib/sports";
 import { paresRoundRobin } from "@/lib/sorteio";
-import type { Sport } from "@prisma/client";
+import type { Category, Sport } from "@prisma/client";
 
 /**
  * Gera automaticamente os jogos da fase de grupos (todos os pares round-robin
@@ -16,12 +16,13 @@ import type { Sport } from "@prisma/client";
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null);
   const sport = body?.sport as Sport | undefined;
-  if (!sport || !SPORTS.includes(sport)) {
-    return NextResponse.json({ error: "Esporte inválido." }, { status: 400 });
+  const category = body?.category as Category | undefined;
+  if (!sport || !SPORTS.includes(sport) || !category || !CATEGORIES.includes(category)) {
+    return NextResponse.json({ error: "Esporte/categoria inválido." }, { status: 400 });
   }
 
   const groups = await prisma.group.findMany({
-    where: { sport },
+    where: { sport, category },
     orderBy: { name: "asc" },
     include: { teams: { orderBy: { order: "asc" }, select: { teamId: true } } },
   });
@@ -34,7 +35,7 @@ export async function POST(request: NextRequest) {
   }
 
   const existingMatches = await prisma.match.findMany({
-    where: { sport, phase: "GRUPOS", groupId: { in: groups.map((g) => g.id) } },
+    where: { sport, category, phase: "GRUPOS", groupId: { in: groups.map((g) => g.id) } },
     select: { groupId: true, teamAId: true, teamBId: true },
   });
   const existingPairs = new Set(
@@ -62,6 +63,7 @@ export async function POST(request: NextRequest) {
       prisma.match.create({
         data: {
           sport,
+          category,
           phase: "GRUPOS",
           groupId: pair.groupId,
           teamAId: pair.teamAId,

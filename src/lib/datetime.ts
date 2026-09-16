@@ -40,6 +40,24 @@ export function formatTimeBR(date: Date): string {
   }).format(date);
 }
 
+/**
+ * Data sem hora (ex: nascimento) — lida/escrita sempre em UTC, nunca no fuso de
+ * Alagoas, pra não arriscar deslocar de dia (meia-noite UTC-3 vira dia anterior
+ * se formatado num fuso negativo).
+ */
+export function dateOnlyInputToDate(value: string): Date {
+  return new Date(`${value}T00:00:00Z`);
+}
+
+export function formatDateOnlyBR(date: Date): string {
+  return new Intl.DateTimeFormat("pt-BR", {
+    timeZone: "UTC",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(date);
+}
+
 /** Converte um valor de <input type="datetime-local"> (hora local de Alagoas) para Date/UTC. */
 export function localInputToDate(value: string): Date {
   return new Date(`${value}:00-03:00`);

@@ -1,22 +1,32 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { sportFromSlug, SPORT_LABELS, PHASE_LABELS, STATUS_LABELS } from "@/lib/sports";
+import {
+  sportFromSlug,
+  categoryFromSlug,
+  SPORT_LABELS,
+  PHASE_LABELS,
+  STATUS_LABELS,
+} from "@/lib/sports";
 import { calcularClassificacao } from "@/lib/standings";
 import { StandingsTable } from "@/components/tabela/standings-table";
 import { formatDateTimeBR } from "@/lib/datetime";
+import { CategoryTabs } from "@/components/nav/category-tabs";
 
 export default async function TabelaSportPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ sport: string }>;
+  searchParams: Promise<{ categoria?: string }>;
 }) {
   const { sport: slug } = await params;
   const sport = sportFromSlug(slug);
   if (!sport) notFound();
+  const category = categoryFromSlug((await searchParams).categoria) ?? "MASCULINO";
 
   const [groups, playoffMatches] = await Promise.all([
     prisma.group.findMany({
-      where: { sport },
+      where: { sport, category },
       orderBy: { name: "asc" },
       include: {
         teams: { include: { team: { include: { atletica: true } } } },
@@ -24,7 +34,7 @@ export default async function TabelaSportPage({
       },
     }),
     prisma.match.findMany({
-      where: { sport, phase: { not: "GRUPOS" } },
+      where: { sport, category, phase: { not: "GRUPOS" } },
       orderBy: [{ matchDate: "asc" }],
       include: {
         teamA: { include: { atletica: true } },
@@ -44,6 +54,10 @@ export default async function TabelaSportPage({
       <h1 className="font-heading text-2xl font-semibold uppercase tracking-wide text-gradient-gold">
         {SPORT_LABELS[sport]}
       </h1>
+
+      <div className="mt-4">
+        <CategoryTabs basePath={`/tabela/${slug}`} active={category} />
+      </div>
 
       {groups.length === 0 && (
         <p className="steel-border mt-6 rounded-sm bg-surface p-4 text-sm text-muted">

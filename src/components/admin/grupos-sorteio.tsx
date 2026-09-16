@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { Sport } from "@prisma/client";
+import type { Category, Sport } from "@prisma/client";
 import { inputClass } from "@/lib/ui";
 import { Button } from "@/components/ui/button";
 
@@ -15,10 +15,12 @@ const REVEAL_INTERVAL_MS = 3000;
 
 export function GruposSorteio({
   sport,
+  category,
   initialGroups,
   teamCount,
 }: {
   sport: Sport;
+  category: Category;
   initialGroups: Group[];
   teamCount: number;
 }) {
@@ -80,7 +82,7 @@ export function GruposSorteio({
       const res = await fetch("/api/admin/groups/draw", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sport, groupCount }),
+        body: JSON.stringify({ sport, category, groupCount }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Não foi possível sortear.");

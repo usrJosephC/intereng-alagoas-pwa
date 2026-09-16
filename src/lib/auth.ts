@@ -3,6 +3,8 @@ import bcrypt from "bcryptjs";
 import { cookies } from "next/headers";
 import type { Role } from "@prisma/client";
 
+const VALID_ROLES: Role[] = ["MASTER", "ADMIN", "ORGANIZADOR", "SUMULA", "MEMBER"];
+
 export const SESSION_COOKIE = "ial_session";
 const SESSION_DURATION_SECONDS = 60 * 60 * 24 * 30; // 30 dias
 
@@ -45,11 +47,16 @@ export async function verifySessionToken(token: string): Promise<SessionPayload 
       !payload.sub ||
       typeof payload.email !== "string" ||
       typeof payload.name !== "string" ||
-      (payload.role !== "ADMIN" && payload.role !== "MEMBER")
+      !VALID_ROLES.includes(payload.role as Role)
     ) {
       return null;
     }
-    return { sub: payload.sub, email: payload.email, name: payload.name, role: payload.role };
+    return {
+      sub: payload.sub,
+      email: payload.email,
+      name: payload.name,
+      role: payload.role as Role,
+    };
   } catch {
     return null;
   }

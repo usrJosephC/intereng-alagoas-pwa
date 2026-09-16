@@ -1,19 +1,15 @@
 import Link from "next/link";
 import { LogoMark } from "@/components/nav/logo-mark";
+import { HeroBackdrop } from "@/components/three/hero-backdrop";
 import { LinkButton } from "@/components/ui/button";
 import { SPORTS, SPORT_LABELS, SPORT_SLUGS } from "@/lib/sports";
-
-const SPORT_EMOJI: Record<string, string> = {
-  VOLEI: "🏐",
-  BASQUETE: "🏀",
-  FUTSAL: "⚽",
-  HANDEBOL: "🤾",
-};
+import { SportIconImage } from "@/components/ui/sport-icon-image";
 
 export default function HomePage() {
   return (
     <div>
-      <section className="mx-auto flex max-w-3xl flex-col items-center px-4 py-14 text-center sm:py-20">
+      <section className="relative mx-auto flex max-w-3xl flex-col items-center overflow-hidden px-4 py-14 text-center sm:py-20">
+        <HeroBackdrop />
         <LogoMark className="h-24 sm:h-28" />
         <h1 className="font-display mt-6 text-4xl font-normal uppercase text-gradient-gold sm:text-6xl">
           InterEng Alagoas
@@ -40,10 +36,10 @@ export default function HomePage() {
             <Link
               key={sport}
               href={`/tabela/${SPORT_SLUGS[sport]}`}
-              className="steel-border flex min-h-[110px] flex-col items-center justify-center gap-2 rounded-sm bg-surface p-4 text-center transition-colors hover:border-gold"
+              className="steel-border flex min-h-[110px] flex-col items-center justify-center gap-2 rounded-sm bg-surface p-4 text-center text-gold transition-colors hover:border-gold"
             >
-              <span className="text-3xl">{SPORT_EMOJI[sport]}</span>
-              <span className="font-heading text-sm font-semibold uppercase tracking-wide">
+              <SportIconImage sport={sport} className="h-9 w-9" />
+              <span className="font-heading text-sm font-semibold uppercase tracking-wide text-foreground">
                 {SPORT_LABELS[sport]}
               </span>
             </Link>

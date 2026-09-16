@@ -10,6 +10,16 @@ export const registerSchema = z.object({
   email: z.string().trim().toLowerCase().email(),
   password: z.string().min(6).max(72),
   atleticaId: z.string().cuid().optional().or(z.literal("")),
+  phone: z.string().trim().max(30).optional().or(z.literal("")),
+  birthDate: z.string().trim().max(10).optional().or(z.literal("")),
+  city: z.string().trim().max(80).optional().or(z.literal("")),
+  course: z.string().trim().max(80).optional().or(z.literal("")),
+  institution: z.string().trim().max(120).optional().or(z.literal("")),
+  /// Obrigatório: sem consentimento explícito não dá pra criar conta (ver o
+  /// texto/checkbox no formulário de cadastro).
+  sponsorConsent: z.literal(true, {
+    error: "É preciso aceitar o compartilhamento de dados com o evento para se cadastrar.",
+  }),
 });
 
 export const postCreateSchema = z.object({
@@ -47,6 +57,39 @@ export const matchCreateSchema = z.object({
   teamBId: z.string().cuid(),
   venueId: z.string().cuid().optional().or(z.literal("")),
   matchDate: z.string().min(1),
+  /// Confirma o cadastro mesmo com choque de horário detectado (ver checarChoqueHorario).
+  forceConflict: z.boolean().optional(),
+});
+
+export const userRoleUpdateSchema = z.object({
+  role: z.enum(["MASTER", "ADMIN", "ORGANIZADOR", "SUMULA", "MEMBER"]),
+});
+
+export const userCreateSchema = z.object({
+  name: z.string().trim().min(2).max(80),
+  email: z.string().trim().toLowerCase().email(),
+  password: z.string().min(6).max(72),
+  role: z.enum(["MASTER", "ADMIN", "ORGANIZADOR", "SUMULA", "MEMBER"]),
+});
+
+export const profileUpdateSchema = z.object({
+  name: z.string().trim().min(2).max(80),
+  avatarUrl: z.string().trim().url().max(2000).optional().or(z.literal("")),
+  phone: z.string().trim().max(30).optional().or(z.literal("")),
+  birthDate: z.string().trim().max(10).optional().or(z.literal("")),
+  city: z.string().trim().max(80).optional().or(z.literal("")),
+  course: z.string().trim().max(80).optional().or(z.literal("")),
+  institution: z.string().trim().max(120).optional().or(z.literal("")),
+  sponsorConsent: z.boolean().optional(),
+});
+
+export const forgotPasswordSchema = z.object({
+  email: z.string().trim().toLowerCase().email(),
+});
+
+export const resetPasswordSchema = z.object({
+  token: z.string().min(1),
+  password: z.string().min(6).max(72),
 });
 
 export const matchUpdateSchema = z.object({
@@ -58,4 +101,15 @@ export const matchUpdateSchema = z.object({
   teamAId: z.string().cuid().optional(),
   teamBId: z.string().cuid().optional(),
   phase: z.enum(["GRUPOS", "QUARTAS", "SEMI", "TERCEIRO", "FINAL"]).optional(),
+  notes: z.string().trim().max(2000).nullable().optional(),
+  /// Confirma o salvamento mesmo com choque de horário detectado (ver checarChoqueHorario).
+  forceConflict: z.boolean().optional(),
+});
+
+/// Papel SUMULA só edita placar/status/observações — nunca times, local, data ou fase.
+export const matchSumulaUpdateSchema = z.object({
+  scoreA: z.number().int().min(0).nullable().optional(),
+  scoreB: z.number().int().min(0).nullable().optional(),
+  status: z.enum(["AGENDADO", "AO_VIVO", "ENCERRADO", "ADIADO"]).optional(),
+  notes: z.string().trim().max(2000).nullable().optional(),
 });

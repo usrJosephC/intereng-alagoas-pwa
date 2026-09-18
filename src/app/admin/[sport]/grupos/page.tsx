@@ -18,7 +18,7 @@ export default async function AdminSportGruposPage({
   if (!sport) notFound();
   const category = categoryFromSlug((await searchParams).categoria) ?? "MASCULINO";
 
-  const [groups, teamCount] = await Promise.all([
+  const [groups, teams] = await Promise.all([
     prisma.group.findMany({
       where: { sport, category },
       orderBy: { name: "asc" },
@@ -29,7 +29,11 @@ export default async function AdminSportGruposPage({
         },
       },
     }),
-    prisma.team.count({ where: { sport, category } }),
+    prisma.team.findMany({
+      where: { sport, category },
+      orderBy: { createdAt: "asc" },
+      include: { atletica: { select: { name: true } } },
+    }),
   ]);
 
   return (
@@ -40,7 +44,7 @@ export default async function AdminSportGruposPage({
         sport={sport}
         category={category}
         initialGroups={groups}
-        teamCount={teamCount}
+        teams={teams}
       />
     </div>
   );

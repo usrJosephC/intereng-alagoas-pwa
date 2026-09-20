@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { groupDrawSchema } from "@/lib/schemas";
 import { SPORTS, CATEGORIES } from "@/lib/sports";
-import { distribuirEmGrupos, nomeDoGrupo } from "@/lib/sorteio";
+import { distribuirEmGruposComCabecas, nomeDoGrupo } from "@/lib/sorteio";
 import type { Category, Sport } from "@prisma/client";
 
 export async function POST(request: NextRequest) {
@@ -29,6 +29,37 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const teamIds = new Set(teams.map((t) => t.id));
+  const { seedGroupA, seedGroupB } = parsed.data;
+  if (seedGroupA && !teamIds.has(seedGroupA)) {
+    return NextResponse.json(
+      { error: "O cabeça de chave do Grupo A não está inscrito neste esporte/categoria." },
+      { status: 400 }
+    );
+  }
+  if (seedGroupB && !teamIds.has(seedGroupB)) {
+    return NextResponse.json(
+      { error: "O cabeça de chave do Grupo B não está inscrito neste esporte/categoria." },
+      { status: 400 }
+    );
+  }
+  if (seedGroupA && seedGroupB && seedGroupA === seedGroupB) {
+    return NextResponse.json(
+      { error: "Os cabeças de chave do Grupo A e do Grupo B precisam ser atléticas diferentes." },
+      { status: 400 }
+    );
+  }
+  if (seedGroupB && parsed.data.groupCount < 2) {
+    return NextResponse.json(
+      { error: "É preciso pelo menos 2 grupos para ter cabeça de chave no Grupo B." },
+      { status: 400 }
+    );
+  }
+
+  const seeds: { groupIndex: number; item: string }[] = [];
+  if (seedGroupA) seeds.push({ groupIndex: 0, item: seedGroupA });
+  if (seedGroupB) seeds.push({ groupIndex: 1, item: seedGroupB });
+
   const existingGroups = await prisma.group.findMany({
     where: { sport, category },
     select: { id: true },
@@ -40,9 +71,10 @@ export async function POST(request: NextRequest) {
         await tx.group.deleteMany({ where: { sport, category } });
       }
 
-      const groupedTeams = distribuirEmGrupos(
+      const groupedTeams = distribuirEmGruposComCabecas(
         teams.map((t) => t.id),
-        parsed.data.groupCount
+        parsed.data.groupCount,
+        seeds
       );
 
       for (let i = 0; i < groupedTeams.length; i++) {

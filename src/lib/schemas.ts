@@ -48,6 +48,10 @@ export const teamEnrollSchema = z.object({
 
 export const groupDrawSchema = z.object({
   groupCount: z.number().int().min(1).max(16),
+  /// Cabeças de chave manuais (ex: 1º/2º colocados do campeonato anterior) —
+  /// opcionais, vão pra posição 0 do Grupo A/B antes do resto ser sorteado.
+  seedGroupA: z.string().cuid().optional().or(z.literal("")),
+  seedGroupB: z.string().cuid().optional().or(z.literal("")),
 });
 
 export const matchCreateSchema = z.object({

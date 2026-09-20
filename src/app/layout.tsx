@@ -3,6 +3,7 @@ import { Inter, Oswald } from "next/font/google";
 import localFont from "next/font/local";
 import { ServiceWorkerRegister } from "@/components/pwa/sw-register";
 import { SiteHeader } from "@/components/nav/site-header";
+import { SiteFooter } from "@/components/nav/site-footer";
 import { MobileTabBar } from "@/components/nav/mobile-tab-bar";
 import "./globals.css";
 
@@ -64,6 +65,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col">
         <SiteHeader />
         <main className="flex-1 pb-20 sm:pb-0">{children}</main>
+        <SiteFooter />
         <MobileTabBar />
         <ServiceWorkerRegister />
       </body>

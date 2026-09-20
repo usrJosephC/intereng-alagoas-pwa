@@ -8,6 +8,7 @@ import {
   createSessionToken,
   verifyPassword,
 } from "@/lib/auth";
+import { roleHomePath } from "@/lib/roles";
 
 async function readCredentials(request: NextRequest) {
   const contentType = request.headers.get("content-type") ?? "";
@@ -56,7 +57,7 @@ export async function POST(request: NextRequest) {
   });
 
   const response = isFormPost
-    ? NextResponse.redirect(new URL(user.role === "ADMIN" ? "/admin" : "/", request.url), 303)
+    ? NextResponse.redirect(new URL(roleHomePath(user.role), request.url), 303)
     : NextResponse.json({ ok: true, role: user.role });
 
   response.cookies.set(SESSION_COOKIE, token, sessionCookieOptions);

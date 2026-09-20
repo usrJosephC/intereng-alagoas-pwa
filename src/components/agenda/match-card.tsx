@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { clsx } from "clsx";
-import { SPORT_LABELS, PHASE_LABELS, STATUS_LABELS } from "@/lib/sports";
+import { SPORT_LABELS, PHASE_LABELS, STATUS_LABELS, CATEGORY_LABELS } from "@/lib/sports";
 import { formatDateTimeBR } from "@/lib/datetime";
+import { LiveBadge } from "@/components/ui/live-badge";
 
 export type MatchCardData = {
   id: string;
   sport: keyof typeof SPORT_LABELS;
+  category: keyof typeof CATEGORY_LABELS;
   phase: keyof typeof PHASE_LABELS;
   status: keyof typeof STATUS_LABELS;
   matchDate: Date;
@@ -33,11 +35,15 @@ export function MatchCard({ match }: { match: MatchCardData }) {
     >
       <div className="flex items-center justify-between text-xs uppercase tracking-wide text-muted">
         <span>
-          {SPORT_LABELS[match.sport]} · {PHASE_LABELS[match.phase]}
+          {SPORT_LABELS[match.sport]} {CATEGORY_LABELS[match.category]} · {PHASE_LABELS[match.phase]}
         </span>
-        <span className={clsx("font-semibold", STATUS_COLOR[match.status])}>
-          {STATUS_LABELS[match.status]}
-        </span>
+        {match.status === "AO_VIVO" ? (
+          <LiveBadge />
+        ) : (
+          <span className={clsx("font-semibold", STATUS_COLOR[match.status])}>
+            {STATUS_LABELS[match.status]}
+          </span>
+        )}
       </div>
 
       <div className="flex items-center justify-between gap-3">

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { brazilTodayRangeUTC } from "@/lib/datetime";
 
@@ -39,6 +40,24 @@ export default async function AdminHomePage() {
             </p>
           </div>
         ))}
+      </div>
+
+      <div className="steel-border mt-6 flex flex-wrap items-center justify-between gap-3 rounded-sm bg-surface p-4">
+        <div>
+          <p className="font-heading text-sm font-semibold uppercase tracking-wide text-gold">
+            Agenda completa em Excel
+          </p>
+          <p className="mt-0.5 text-xs text-muted">
+            Todos os jogos (todos os esportes/categorias) numa planilha só — útil pra conferir se
+            algum horário se choca.
+          </p>
+        </div>
+        <Link
+          href="/api/admin/matches/export"
+          className="min-h-[40px] rounded-sm bg-gold px-4 py-2 text-xs font-semibold uppercase tracking-wide text-black hover:bg-gold-soft"
+        >
+          Exportar .xlsx
+        </Link>
       </div>
     </div>
   );

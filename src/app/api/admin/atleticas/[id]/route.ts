@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { atleticaSchema } from "@/lib/schemas";
+import { getSession } from "@/lib/auth";
+import { registrarAuditoria } from "@/lib/audit";
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -25,6 +27,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
 export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const atletica = await prisma.atletica.findUnique({ where: { id }, select: { name: true } });
   try {
     await prisma.atletica.delete({ where: { id } });
   } catch {
@@ -33,5 +36,13 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
       { status: 409 }
     );
   }
+  const session = await getSession();
+  await registrarAuditoria({
+    actorId: session?.sub ?? null,
+    action: "atletica.deleted",
+    targetType: "Atletica",
+    targetId: id,
+    metadata: atletica ?? undefined,
+  });
   return NextResponse.json({ ok: true });
 }

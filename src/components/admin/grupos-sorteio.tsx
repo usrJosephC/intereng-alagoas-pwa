@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { Sport } from "@prisma/client";
+import type { Category, Sport } from "@prisma/client";
 import { inputClass } from "@/lib/ui";
 import { Button } from "@/components/ui/button";
 
@@ -11,19 +11,26 @@ type Group = {
   teams: { team: { id: string; atletica: { name: string } } }[];
 };
 
+type Team = { id: string; atletica: { name: string } };
+
 const REVEAL_INTERVAL_MS = 3000;
 
 export function GruposSorteio({
   sport,
+  category,
   initialGroups,
-  teamCount,
+  teams,
 }: {
   sport: Sport;
+  category: Category;
   initialGroups: Group[];
-  teamCount: number;
+  teams: Team[];
 }) {
   const [groups, setGroups] = useState(initialGroups);
+  const teamCount = teams.length;
   const [groupCount, setGroupCount] = useState(Math.max(2, Math.min(4, teamCount)));
+  const [seedGroupA, setSeedGroupA] = useState("");
+  const [seedGroupB, setSeedGroupB] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Quantos times (por grupo) já foram revelados. Começa "cheio" para o carregamento
@@ -80,7 +87,7 @@ export function GruposSorteio({
       const res = await fetch("/api/admin/groups/draw", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sport, groupCount }),
+        body: JSON.stringify({ sport, category, groupCount, seedGroupA, seedGroupB }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Não foi possível sortear.");
@@ -111,6 +118,49 @@ export function GruposSorteio({
             className={`${inputClass} w-28`}
           />
         </div>
+
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold uppercase tracking-wide text-muted">
+            Cabeça de chave — Grupo A
+          </label>
+          <select
+            value={seedGroupA}
+            onChange={(e) => setSeedGroupA(e.target.value)}
+            className={`${inputClass} w-52`}
+          >
+            <option value="">Sortear aleatoriamente</option>
+            {teams
+              .filter((t) => t.id !== seedGroupB)
+              .map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.atletica.name}
+                </option>
+              ))}
+          </select>
+        </div>
+
+        {groupCount >= 2 && (
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold uppercase tracking-wide text-muted">
+              Cabeça de chave — Grupo B
+            </label>
+            <select
+              value={seedGroupB}
+              onChange={(e) => setSeedGroupB(e.target.value)}
+              className={`${inputClass} w-52`}
+            >
+              <option value="">Sortear aleatoriamente</option>
+              {teams
+                .filter((t) => t.id !== seedGroupA)
+                .map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.atletica.name}
+                  </option>
+                ))}
+            </select>
+          </div>
+        )}
+
         <Button onClick={handleDraw} disabled={loading || teamCount === 0}>
           {loading ? "Sorteando..." : groups.length > 0 ? "Sortear novamente" : "Sortear grupos"}
         </Button>

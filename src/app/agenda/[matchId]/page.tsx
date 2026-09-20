@@ -1,9 +1,12 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
-import { SPORT_LABELS, PHASE_LABELS, STATUS_LABELS } from "@/lib/sports";
+import { canAccessAdmin } from "@/lib/roles";
+import { SPORT_LABELS, CATEGORY_LABELS, PHASE_LABELS, STATUS_LABELS } from "@/lib/sports";
 import { formatDateTimeBR } from "@/lib/datetime";
 import { CommentSection } from "@/components/comments/comment-section";
+import { LiveBadge } from "@/components/ui/live-badge";
+import { AtleticaLogo } from "@/components/ui/atletica-logo";
 
 export default async function MatchDetailPage({
   params,
@@ -32,20 +35,32 @@ export default async function MatchDetailPage({
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
-      <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-        {SPORT_LABELS[match.sport]} · {PHASE_LABELS[match.phase]} ·{" "}
-        {STATUS_LABELS[match.status]}
+      <p className="flex flex-wrap items-center gap-x-1.5 text-xs font-semibold uppercase tracking-wide text-muted">
+        <span>
+          {SPORT_LABELS[match.sport]} {CATEGORY_LABELS[match.category]} · {PHASE_LABELS[match.phase]}
+        </span>
+        {match.status === "AO_VIVO" ? (
+          <LiveBadge />
+        ) : (
+          <span>· {STATUS_LABELS[match.status]}</span>
+        )}
       </p>
 
       <div className="steel-border mt-4 flex items-center justify-between gap-4 rounded-sm bg-surface p-5">
-        <span className="min-w-0 flex-1 text-center font-heading text-lg font-semibold sm:text-xl">
-          {match.teamA.atletica.name}
+        <span className="flex min-w-0 flex-1 flex-col items-center gap-2 text-center">
+          <AtleticaLogo name={match.teamA.atletica.name} logoUrl={match.teamA.atletica.logoUrl} className="h-12 w-12" />
+          <span className="font-heading text-lg font-semibold sm:text-xl">
+            {match.teamA.atletica.name}
+          </span>
         </span>
         <span className="shrink-0 font-heading text-2xl font-bold text-gold">
           {hasScore ? `${match.scoreA} — ${match.scoreB}` : "vs"}
         </span>
-        <span className="min-w-0 flex-1 text-center font-heading text-lg font-semibold sm:text-xl">
-          {match.teamB.atletica.name}
+        <span className="flex min-w-0 flex-1 flex-col items-center gap-2 text-center">
+          <AtleticaLogo name={match.teamB.atletica.name} logoUrl={match.teamB.atletica.logoUrl} className="h-12 w-12" />
+          <span className="font-heading text-lg font-semibold sm:text-xl">
+            {match.teamB.atletica.name}
+          </span>
         </span>
       </div>
 
@@ -67,7 +82,7 @@ export default async function MatchDetailPage({
               createdAt: c.createdAt.toISOString(),
             }))}
             loggedIn={!!session}
-            canModerate={session?.role === "ADMIN"}
+            canModerate={!!session && canAccessAdmin(session.role)}
           />
         </div>
       </div>

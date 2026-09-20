@@ -6,8 +6,14 @@ datasource db {
   provider = "postgresql"
 }
 
+/// MASTER é o único papel que gerencia outros usuários (criar/editar/excluir
+/// qualquer papel, incluindo ADMIN) e vê o log de auditoria — pensado pra ser
+/// só o dono/desenvolvedor do sistema, não a diretoria do evento em si.
 enum Role {
+  MASTER
   ADMIN
+  ORGANIZADOR
+  SUMULA
   MEMBER
 }
 
@@ -16,6 +22,11 @@ enum Sport {
   BASQUETE
   FUTSAL
   HANDEBOL
+}
+
+enum Category {
+  MASCULINO
+  FEMININO
 }
 
 enum MatchPhase {
@@ -33,22 +44,67 @@ enum MatchStatus {
   ADIADO
 }
 
-/// Conta de acesso (torcida/atleta ou diretoria). `role` decide o acesso ao /admin.
+/// Conta de acesso (torcida/atleta ou diretoria/organizador/súmula). `role`
+/// decide o acesso ao /admin (ver src/proxy.ts).
 model User {
-  id           String     @id @default(cuid())
-  name         String
-  email        String     @unique
-  passwordHash String
-  role         Role       @default(MEMBER)
-  atletica     Atletica?  @relation(fields: [atleticaId], references: [id])
-  atleticaId   String?
-  avatarUrl    String?
-  createdAt    DateTime   @default(now())
-  posts        Post[]
-  postLikes    PostLike[]
-  comments     Comment[]
+  id             String     @id @default(cuid())
+  name           String
+  email          String     @unique
+  passwordHash   String
+  role           Role       @default(MEMBER)
+  atletica       Atletica?  @relation(fields: [atleticaId], references: [id])
+  atleticaId     String?
+  avatarUrl      String?
+  /// Campos de perfil abaixo são opcionais e usados como lead de patrocínio
+  /// (a diretoria vê/exporta esses dados, não são exigidos no MVP de cadastro).
+  phone          String?
+  birthDate      DateTime?
+  city           String?
+  course         String?
+  institution    String?
+  sponsorConsent Boolean    @default(false)
+  createdAt      DateTime   @default(now())
+  posts          Post[]
+  postLikes      PostLike[]
+  comments       Comment[]
+  auditLogs      AuditLog[]
+  resetTokens    PasswordResetToken[]
 
   @@index([atleticaId])
+}
+
+/// Trilha de auditoria de ações sensíveis (mudança de papel, exclusão de
+/// usuário/time/atlética/local/jogo). Só o papel MASTER visualiza
+/// (`/admin/auditoria`). `actor` fica nulo se a conta de quem agiu for
+/// apagada depois — o registro histórico permanece.
+model AuditLog {
+  id         String   @id @default(cuid())
+  actor      User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  actorId    String?
+  action     String
+  targetType String
+  targetId   String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([actorId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+/// Token de recuperação de senha (link enviado por e-mail). `tokenHash` guarda
+/// o hash do token, nunca o valor em claro — o mesmo princípio de
+/// `passwordHash` em User.
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
 }
 
 /// Atlética participante do InterEng. Cadastro central; a inscrição por esporte
@@ -63,20 +119,22 @@ model Atletica {
   torcida   User[]
 }
 
-/// Inscrição de uma atlética num esporte específico (uma atlética pode não
-/// disputar todos os 4 esportes).
+/// Inscrição de uma atlética num esporte+categoria específico (uma atlética
+/// pode não disputar todos os 4 esportes, e masculino/feminino são inscrições
+/// — e classificações — independentes).
 model Team {
   id         String      @id @default(cuid())
   atletica   Atletica    @relation(fields: [atleticaId], references: [id], onDelete: Cascade)
   atleticaId String
   sport      Sport
+  category   Category    @default(MASCULINO)
   createdAt  DateTime    @default(now())
   groupTeams GroupTeam[]
   matchesA   Match[]     @relation("MatchTeamA")
   matchesB   Match[]     @relation("MatchTeamB")
 
-  @@unique([atleticaId, sport])
-  @@index([sport])
+  @@unique([atleticaId, sport, category])
+  @@index([sport, category])
 }
 
 /// Local reutilizável (ginásio/quadra) para os jogos.
@@ -87,16 +145,17 @@ model Venue {
   matches Match[]
 }
 
-/// Grupo de um sorteio, escopado por esporte.
+/// Grupo de um sorteio, escopado por esporte+categoria.
 model Group {
   id        String      @id @default(cuid())
   sport     Sport
+  category  Category    @default(MASCULINO)
   name      String
   createdAt DateTime    @default(now())
   teams     GroupTeam[]
   matches   Match[]
 
-  @@index([sport])
+  @@index([sport, category])
 }
 
 model GroupTeam {
@@ -116,6 +175,7 @@ model GroupTeam {
 model Match {
   id        String      @id @default(cuid())
   sport     Sport
+  category  Category    @default(MASCULINO)
   phase     MatchPhase  @default(GRUPOS)
   group     Group?      @relation(fields: [groupId], references: [id])
   groupId   String?
@@ -130,10 +190,12 @@ model Match {
   venueId   String?
   matchDate DateTime
   status    MatchStatus @default(AGENDADO)
+  /// Observações da súmula (cartões, ocorrências etc), preenchidas pelo papel SUMULA.
+  notes     String?
   createdAt DateTime    @default(now())
   comments  Comment[]
 
-  @@index([sport])
+  @@index([sport, category])
   @@index([matchDate])
   @@index([status])
   @@index([groupId])

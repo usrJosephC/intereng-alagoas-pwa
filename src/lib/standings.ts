@@ -72,3 +72,49 @@ export function calcularClassificacao(
     (a, b) => b.pontos - a.pontos || b.saldo - a.saldo || b.marcados - a.marcados
   );
 }
+
+export type PodioPosicao = { posicao: 1 | 2 | 3 | 4; teamId: string };
+
+/**
+ * Pódio final do mata-mata: 1º/2º pelo resultado da FINAL, 3º/4º pela
+ * disputa de TERCEIRO lugar. Só entra no pódio quem tem jogo ENCERRADO com
+ * placar decidido (sem empate) — enquanto a FINAL/disputa de 3º não acabar,
+ * a posição correspondente simplesmente não aparece.
+ */
+export function calcularPodio(
+  playoffMatches: (StandingsMatch & { phase: string })[]
+): PodioPosicao[] {
+  const resultado: PodioPosicao[] = [];
+
+  function vencedorPerdedor(match: StandingsMatch | undefined): [string, string] | null {
+    if (
+      !match ||
+      match.status !== "ENCERRADO" ||
+      match.scoreA === null ||
+      match.scoreB === null ||
+      match.scoreA === match.scoreB
+    ) {
+      return null;
+    }
+    return match.scoreA > match.scoreB
+      ? [match.teamAId, match.teamBId]
+      : [match.teamBId, match.teamAId];
+  }
+
+  const finalMatch = playoffMatches.find((m) => m.phase === "FINAL");
+  const terceiroMatch = playoffMatches.find((m) => m.phase === "TERCEIRO");
+
+  const finalResult = vencedorPerdedor(finalMatch);
+  if (finalResult) {
+    resultado.push({ posicao: 1, teamId: finalResult[0] });
+    resultado.push({ posicao: 2, teamId: finalResult[1] });
+  }
+
+  const terceiroResult = vencedorPerdedor(terceiroMatch);
+  if (terceiroResult) {
+    resultado.push({ posicao: 3, teamId: terceiroResult[0] });
+    resultado.push({ posicao: 4, teamId: terceiroResult[1] });
+  }
+
+  return resultado;
+}

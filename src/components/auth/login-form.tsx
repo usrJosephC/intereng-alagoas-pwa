@@ -1,9 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { inputClass, labelClass } from "@/lib/ui";
 import { Button } from "@/components/ui/button";
+import { PasswordInput } from "@/components/ui/password-input";
+import { roleHomePath } from "@/lib/roles";
 
 export function LoginForm({ redirectAfter }: { redirectAfter?: string }) {
   const router = useRouter();
@@ -31,7 +34,12 @@ export function LoginForm({ redirectAfter }: { redirectAfter?: string }) {
         return;
       }
       const from = searchParams.get("from");
-      router.push(from ?? redirectAfter ?? (data.role === "ADMIN" ? "/admin" : "/"));
+      const isAdminish =
+        data.role === "MASTER" ||
+        data.role === "ADMIN" ||
+        data.role === "ORGANIZADOR" ||
+        data.role === "SUMULA";
+      router.push(from ?? (isAdminish ? roleHomePath(data.role) : redirectAfter ?? "/"));
       router.refresh();
     } finally {
       setLoading(false);
@@ -53,13 +61,16 @@ export function LoginForm({ redirectAfter }: { redirectAfter?: string }) {
         />
       </div>
       <div className="space-y-1.5">
-        <label className={labelClass}>Senha</label>
-        <input
-          type="password"
+        <div className="flex items-center justify-between">
+          <label className={labelClass}>Senha</label>
+          <Link href="/esqueci-senha" className="text-xs font-semibold text-gold hover:text-gold-soft">
+            Esqueci minha senha
+          </Link>
+        </div>
+        <PasswordInput
           required
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className={inputClass}
+          onChange={setPassword}
           autoComplete="current-password"
         />
       </div>

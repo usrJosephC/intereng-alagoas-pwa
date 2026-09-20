@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Sport } from "@prisma/client";
+import type { Category, Sport } from "@prisma/client";
 import { inputClass, smallButtonClass } from "@/lib/ui";
 import { Button } from "@/components/ui/button";
 import { PHASE_LABELS, STATUS_LABELS } from "@/lib/sports";
@@ -28,12 +28,14 @@ const STATUSES = Object.keys(STATUS_LABELS);
 
 export function JogosManager({
   sport,
+  category,
   initialMatches,
   teams,
   groups,
   venues,
 }: {
   sport: Sport;
+  category: Category;
   initialMatches: Match[];
   teams: Team[];
   groups: Group[];
@@ -73,12 +75,14 @@ export function JogosManager({
 
       <GerarJogosAutomaticos
         sport={sport}
+        category={category}
         hasGroups={groups.length > 0}
         onGenerated={(newMatches) => setMatches((prev) => [...prev, ...newMatches])}
       />
 
       <NewMatchForm
         sport={sport}
+        category={category}
         teams={teams}
         groups={groups}
         venues={venues}
@@ -90,10 +94,12 @@ export function JogosManager({
 
 function GerarJogosAutomaticos({
   sport,
+  category,
   hasGroups,
   onGenerated,
 }: {
   sport: Sport;
+  category: Category;
   hasGroups: boolean;
   onGenerated: (matches: Match[]) => void;
 }) {
@@ -109,7 +115,7 @@ function GerarJogosAutomaticos({
       const res = await fetch("/api/admin/groups/generate-matches", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sport }),
+        body: JSON.stringify({ sport, category }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Não foi possível gerar os jogos.");
@@ -170,7 +176,7 @@ function MatchRow({
   const [matchDate, setMatchDate] = useState(dateToLocalInput(new Date(match.matchDate)));
   const [saving, setSaving] = useState(false);
 
-  async function handleSave() {
+  async function handleSave(forceConflict = false) {
     setSaving(true);
     try {
       const res = await fetch(`/api/admin/matches/${match.id}`, {
@@ -182,10 +188,16 @@ function MatchRow({
           status,
           venueId: venueId || null,
           matchDate,
+          forceConflict,
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Não foi possível salvar.");
+      if (!res.ok) {
+        if (data.conflict && !forceConflict && confirm(`${data.error} Salvar mesmo assim?`)) {
+          return handleSave(true);
+        }
+        throw new Error(data.error || "Não foi possível salvar.");
+      }
       onUpdated(data.match);
     } catch (err) {
       alert(err instanceof Error ? err.message : "Não foi possível salvar.");
@@ -246,7 +258,7 @@ function MatchRow({
       </div>
 
       <div className="flex gap-2">
-        <button onClick={handleSave} disabled={saving} className={smallButtonClass}>
+        <button onClick={() => handleSave()} disabled={saving} className={smallButtonClass}>
           {saving ? "Salvando..." : "Salvar"}
         </button>
         <button onClick={onDelete} className={smallButtonClass}>
@@ -259,12 +271,14 @@ function MatchRow({
 
 function NewMatchForm({
   sport,
+  category,
   teams,
   groups,
   venues,
   onCreated,
 }: {
   sport: Sport;
+  category: Category;
   teams: Team[];
   groups: Group[];
   venues: Venue[];
@@ -279,7 +293,7 @@ function NewMatchForm({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent, forceConflict = false) {
     e.preventDefault();
     setSaving(true);
     setError(null);
@@ -289,16 +303,23 @@ function NewMatchForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           sport,
+          category,
           phase,
           groupId: phase === "GRUPOS" ? groupId : "",
           teamAId,
           teamBId,
           venueId,
           matchDate,
+          forceConflict,
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Não foi possível criar o jogo.");
+      if (!res.ok) {
+        if (data.conflict && !forceConflict && confirm(`${data.error} Criar mesmo assim?`)) {
+          return handleSubmit(e, true);
+        }
+        throw new Error(data.error || "Não foi possível criar o jogo.");
+      }
       onCreated(data.match);
       setTeamAId("");
       setTeamBId("");

@@ -6,7 +6,7 @@ export const metadata = { title: "Atléticas" };
 export default async function AdminAtleticasPage() {
   const atleticas = await prisma.atletica.findMany({
     orderBy: { name: "asc" },
-    select: { id: true, name: true, shortName: true },
+    select: { id: true, name: true, shortName: true, logoUrl: true },
   });
 
   return (

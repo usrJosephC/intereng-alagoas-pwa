@@ -109,3 +109,17 @@ body {
 .reveal-pending {
   animation: pulse-slot 1.4s ease-in-out infinite;
 }
+
+@keyframes live-dot {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(209, 90, 74, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(209, 90, 74, 0);
+  }
+}
+
+.live-dot {
+  animation: live-dot 1.5s ease-in-out infinite;
+}

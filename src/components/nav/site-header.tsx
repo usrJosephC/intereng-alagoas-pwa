@@ -87,14 +87,30 @@ export async function SiteHeader() {
       </div>
 
       {session ? (
-        <Link
-          href="/perfil"
-          title="Editar perfil"
-          className="sm:hidden flex items-center gap-1 text-xs font-semibold text-gold"
-        >
-          <UserIcon className="h-4 w-4" />
-          {session.name.split(" ")[0]}
-        </Link>
+        <div className="flex items-center gap-3 sm:hidden">
+          {canAccessAdmin(session.role) && (
+            <Link href="/admin" className="text-xs font-semibold uppercase tracking-wide hover:text-gold">
+              Painel
+            </Link>
+          )}
+          {session.role === "SUMULA" && (
+            <Link
+              href="/admin/sumula"
+              className="text-xs font-semibold uppercase tracking-wide hover:text-gold"
+            >
+              Súmula
+            </Link>
+          )}
+          <Link
+            href="/perfil"
+            title="Editar perfil"
+            className="flex items-center gap-1 text-xs font-semibold text-gold"
+          >
+            <UserIcon className="h-4 w-4" />
+            {session.name.split(" ")[0]}
+          </Link>
+          <LogoutButton className="text-xs font-semibold uppercase tracking-wide text-muted hover:text-gold" />
+        </div>
       ) : (
         <Link
           href="/login"

@@ -20,6 +20,8 @@ export function ProfileForm({ user }: { user: User }) {
   const router = useRouter();
   const [name, setName] = useState(user.name);
   const [avatarUrl, setAvatarUrl] = useState(user.avatarUrl ?? "");
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [photoError, setPhotoError] = useState<string | null>(null);
   const [phone, setPhone] = useState(user.phone ?? "");
   const [birthDate, setBirthDate] = useState(user.birthDate ? user.birthDate.slice(0, 10) : "");
   const [city, setCity] = useState(user.city ?? "");
@@ -41,7 +43,6 @@ export function ProfileForm({ user }: { user: User }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name,
-          avatarUrl,
           phone,
           birthDate,
           city,
@@ -59,6 +60,27 @@ export function ProfileForm({ user }: { user: User }) {
       router.refresh();
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // permite escolher o mesmo arquivo de novo depois
+    if (!file) return;
+    setUploadingPhoto(true);
+    setPhotoError(null);
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      const res = await fetch("/api/profile/photo", { method: "POST", body });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Não foi possível enviar a foto.");
+      setAvatarUrl(data.avatarUrl);
+      router.refresh();
+    } catch (err) {
+      setPhotoError(err instanceof Error ? err.message : "Não foi possível enviar a foto.");
+    } finally {
+      setUploadingPhoto(false);
     }
   }
 
@@ -81,13 +103,16 @@ export function ProfileForm({ user }: { user: User }) {
           </div>
         )}
         <div className="flex-1 space-y-1.5">
-          <label className={labelClass}>URL da foto (opcional)</label>
+          <label className={labelClass}>Foto de perfil (opcional)</label>
           <input
-            value={avatarUrl}
-            onChange={(e) => setAvatarUrl(e.target.value)}
+            type="file"
+            accept="image/*"
+            onChange={handlePhotoChange}
+            disabled={uploadingPhoto}
             className={inputClass}
-            placeholder="https://..."
           />
+          {uploadingPhoto && <p className="text-xs text-muted">Enviando foto...</p>}
+          {photoError && <p className="text-xs text-danger">{photoError}</p>}
         </div>
       </div>
 

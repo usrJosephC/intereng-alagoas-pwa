@@ -22,19 +22,31 @@ export const registerSchema = z.object({
   }),
 });
 
+/// imageUrl só aceita o que veio do nosso próprio upload (POST /api/posts/photo)
+/// — nunca uma URL externa arbitrária colada pelo usuário.
 export const postCreateSchema = z.object({
   content: z.string().trim().min(1).max(2000),
-  imageUrl: z.string().trim().url().max(2000).optional().or(z.literal("")),
+  imageUrl: z
+    .string()
+    .trim()
+    .url()
+    .max(2000)
+    .refine((url) => url.includes("/storage/v1/object/public/uploads/posts/"), {
+      error: "URL de imagem inválida.",
+    })
+    .optional()
+    .or(z.literal("")),
 });
 
 export const commentCreateSchema = z.object({
   content: z.string().trim().min(1).max(1000),
 });
 
+/// logoUrl não entra aqui de propósito — é setado só via upload
+/// (POST /api/admin/atleticas/[id]/logo), nunca por URL arbitrária no corpo.
 export const atleticaSchema = z.object({
   name: z.string().trim().min(2).max(80),
   shortName: z.string().trim().max(20).optional().or(z.literal("")),
-  logoUrl: z.string().trim().url().max(2000).optional().or(z.literal("")),
 });
 
 export const venueSchema = z.object({
@@ -76,9 +88,10 @@ export const userCreateSchema = z.object({
   role: z.enum(["MASTER", "ADMIN", "ORGANIZADOR", "SUMULA", "MEMBER"]),
 });
 
+/// avatarUrl não entra aqui de propósito — é setado só via upload
+/// (POST /api/profile/photo), nunca por URL arbitrária no corpo.
 export const profileUpdateSchema = z.object({
   name: z.string().trim().min(2).max(80),
-  avatarUrl: z.string().trim().url().max(2000).optional().or(z.literal("")),
   phone: z.string().trim().max(30).optional().or(z.literal("")),
   birthDate: z.string().trim().max(10).optional().or(z.literal("")),
   city: z.string().trim().max(80).optional().or(z.literal("")),

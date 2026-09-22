@@ -11,7 +11,6 @@ export function AtleticasManager({ initialAtleticas }: { initialAtleticas: Atlet
   const [atleticas, setAtleticas] = useState(initialAtleticas);
   const [name, setName] = useState("");
   const [shortName, setShortName] = useState("");
-  const [logoUrl, setLogoUrl] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -23,14 +22,13 @@ export function AtleticasManager({ initialAtleticas }: { initialAtleticas: Atlet
       const res = await fetch("/api/admin/atleticas", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, shortName, logoUrl }),
+        body: JSON.stringify({ name, shortName }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Não foi possível criar.");
       setAtleticas((prev) => [...prev, data.atletica]);
       setName("");
       setShortName("");
-      setLogoUrl("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Não foi possível criar.");
     } finally {
@@ -71,7 +69,7 @@ export function AtleticasManager({ initialAtleticas }: { initialAtleticas: Atlet
 
       <form onSubmit={handleCreate} className="steel-border space-y-3 rounded-sm bg-surface p-4">
         {error && <p className="text-xs text-danger">{error}</p>}
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2">
           <input
             required
             placeholder="Nome da atlética"
@@ -85,13 +83,8 @@ export function AtleticasManager({ initialAtleticas }: { initialAtleticas: Atlet
             onChange={(e) => setShortName(e.target.value)}
             className={inputClass}
           />
-          <input
-            placeholder="URL do logo (opcional)"
-            value={logoUrl}
-            onChange={(e) => setLogoUrl(e.target.value)}
-            className={inputClass}
-          />
         </div>
+        <p className="text-xs text-muted">O logo é enviado depois de criar, na lista abaixo.</p>
         <Button type="submit" disabled={saving}>
           {saving ? "Salvando..." : "+ Nova atlética"}
         </Button>
@@ -109,24 +102,29 @@ function AtleticaRow({
   onDelete: () => void;
   onLogoUpdated: (logoUrl: string) => void;
 }) {
-  const [logoUrl, setLogoUrl] = useState(atletica.logoUrl ?? "");
-  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  async function handleSaveLogo() {
-    setSaving(true);
+  async function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setUploading(true);
+    setError(null);
     try {
-      const res = await fetch(`/api/admin/atleticas/${atletica.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ logoUrl }),
+      const body = new FormData();
+      body.append("file", file);
+      const res = await fetch(`/api/admin/atleticas/${atletica.id}/logo`, {
+        method: "POST",
+        body,
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Não foi possível salvar.");
+      if (!res.ok) throw new Error(data.error || "Não foi possível enviar o logo.");
       onLogoUpdated(data.atletica.logoUrl ?? "");
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Não foi possível salvar.");
+      setError(err instanceof Error ? err.message : "Não foi possível enviar o logo.");
     } finally {
-      setSaving(false);
+      setUploading(false);
     }
   }
 
@@ -136,16 +134,16 @@ function AtleticaRow({
       <div className="min-w-0 flex-1">
         <p className="font-semibold">{atletica.name}</p>
         {atletica.shortName && <p className="text-xs text-muted">{atletica.shortName}</p>}
+        {error && <p className="text-xs text-danger">{error}</p>}
       </div>
       <input
-        placeholder="URL do logo"
-        value={logoUrl}
-        onChange={(e) => setLogoUrl(e.target.value)}
+        type="file"
+        accept="image/*"
+        onChange={handleLogoChange}
+        disabled={uploading}
         className={`${inputClass} w-full sm:w-56`}
       />
-      <button onClick={handleSaveLogo} disabled={saving} className={smallButtonClass}>
-        {saving ? "Salvando..." : "Salvar logo"}
-      </button>
+      {uploading && <span className="text-xs text-muted">Enviando...</span>}
       <button onClick={onDelete} className={smallButtonClass}>
         Remover
       </button>

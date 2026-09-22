@@ -19,14 +19,12 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "Dados inválidos." }, { status: 400 });
   }
 
-  const { name, avatarUrl, phone, birthDate, city, course, institution, sponsorConsent } =
-    parsed.data;
+  const { name, phone, birthDate, city, course, institution, sponsorConsent } = parsed.data;
 
   const user = await prisma.user.update({
     where: { id: session.sub },
     data: {
       name,
-      avatarUrl: avatarUrl || null,
       phone: phone || null,
       birthDate: birthDate ? dateOnlyInputToDate(birthDate) : null,
       city: city || null,

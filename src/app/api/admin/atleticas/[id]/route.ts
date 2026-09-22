@@ -18,7 +18,6 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     data: {
       ...(parsed.data.name !== undefined ? { name: parsed.data.name } : {}),
       ...(parsed.data.shortName !== undefined ? { shortName: parsed.data.shortName || null } : {}),
-      ...(parsed.data.logoUrl !== undefined ? { logoUrl: parsed.data.logoUrl || null } : {}),
     },
   });
 

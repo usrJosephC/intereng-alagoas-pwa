@@ -9,7 +9,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
   const comments = await prisma.comment.findMany({
     where: { matchId: id },
     orderBy: { createdAt: "asc" },
-    include: { author: { select: { id: true, name: true } } },
+    include: { author: { select: { id: true, name: true, avatarUrl: true } } },
   });
   return NextResponse.json({ comments });
 }
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       matchId: id,
       authorId: session.sub,
     },
-    include: { author: { select: { id: true, name: true } } },
+    include: { author: { select: { id: true, name: true, avatarUrl: true } } },
   });
 
   return NextResponse.json({ comment }, { status: 201 });

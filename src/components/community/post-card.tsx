@@ -4,13 +4,14 @@ import { useState } from "react";
 import Link from "next/link";
 import { clsx } from "clsx";
 import { CommentSection, type CommentData } from "@/components/comments/comment-section";
+import { UserAvatar } from "@/components/ui/user-avatar";
 
 export type PostData = {
   id: string;
   content: string;
   imageUrl: string | null;
   createdAt: string;
-  author: { id: string; name: string };
+  author: { id: string; name: string; avatarUrl: string | null };
   likeCount: number;
   likedByMe: boolean;
   comments: CommentData[];
@@ -51,8 +52,9 @@ export function PostCard({
       <div className="flex items-center justify-between">
         <Link
           href={`/atletas/${post.author.id}`}
-          className="font-heading text-sm font-semibold uppercase tracking-wide text-gold hover:text-gold-soft"
+          className="flex items-center gap-2 font-heading text-sm font-semibold uppercase tracking-wide text-gold hover:text-gold-soft"
         >
+          <UserAvatar name={post.author.name} avatarUrl={post.author.avatarUrl} className="h-7 w-7" />
           {post.author.name}
         </Link>
         {canModerate && (

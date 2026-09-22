@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { cardClass } from "@/lib/ui";
+import { UserAvatar } from "@/components/ui/user-avatar";
 
 export const metadata = { title: "Perfil do atleta" };
 
@@ -20,6 +21,7 @@ export default async function AtletaPage({ params }: { params: Promise<{ id: str
     where: { id },
     select: {
       name: true,
+      avatarUrl: true,
       course: true,
       institution: true,
       instagram: true,
@@ -42,9 +44,12 @@ export default async function AtletaPage({ params }: { params: Promise<{ id: str
   return (
     <div className="mx-auto max-w-lg px-4 py-8">
       <div className={`${cardClass} space-y-3`}>
-        <h1 className="font-heading text-xl font-semibold uppercase tracking-wide text-gradient-gold">
-          {user.name}
-        </h1>
+        <div className="flex items-center gap-3">
+          <UserAvatar name={user.name} avatarUrl={user.avatarUrl} className="h-16 w-16" />
+          <h1 className="font-heading text-xl font-semibold uppercase tracking-wide text-gradient-gold">
+            {user.name}
+          </h1>
+        </div>
         {hasDetails ? (
           <dl className="space-y-2 text-sm">
             {user.course && (

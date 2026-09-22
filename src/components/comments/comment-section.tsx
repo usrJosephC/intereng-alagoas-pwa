@@ -3,13 +3,14 @@
 import { useState } from "react";
 import Link from "next/link";
 import { inputClass } from "@/lib/ui";
+import { UserAvatar } from "@/components/ui/user-avatar";
 
 export type CommentData = {
   id: string;
   content: string;
   imageUrl: string | null;
   createdAt: string;
-  author: { id: string; name: string };
+  author: { id: string; name: string; avatarUrl: string | null };
 };
 
 export function CommentSection({
@@ -89,8 +90,13 @@ export function CommentSection({
             <div className="flex items-center justify-between gap-2">
               <Link
                 href={`/atletas/${comment.author.id}`}
-                className="text-xs font-semibold uppercase tracking-wide text-gold hover:text-gold-soft"
+                className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-gold hover:text-gold-soft"
               >
+                <UserAvatar
+                  name={comment.author.name}
+                  avatarUrl={comment.author.avatarUrl}
+                  className="h-6 w-6"
+                />
                 {comment.author.name}
               </Link>
               {canModerate && (

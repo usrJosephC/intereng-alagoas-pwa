@@ -22,6 +22,8 @@ export default async function PerfilPage() {
       course: true,
       institution: true,
       sponsorConsent: true,
+      instagram: true,
+      profileVisibleToMembers: true,
       atletica: { select: { name: true } },
     },
   });

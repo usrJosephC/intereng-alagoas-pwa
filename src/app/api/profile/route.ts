@@ -19,7 +19,17 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "Dados inválidos." }, { status: 400 });
   }
 
-  const { name, phone, birthDate, city, course, institution, sponsorConsent } = parsed.data;
+  const {
+    name,
+    phone,
+    birthDate,
+    city,
+    course,
+    institution,
+    sponsorConsent,
+    instagram,
+    profileVisibleToMembers,
+  } = parsed.data;
 
   const user = await prisma.user.update({
     where: { id: session.sub },
@@ -31,6 +41,8 @@ export async function PATCH(request: NextRequest) {
       course: course || null,
       institution: institution || null,
       ...(sponsorConsent !== undefined ? { sponsorConsent } : {}),
+      instagram: instagram || null,
+      ...(profileVisibleToMembers !== undefined ? { profileVisibleToMembers } : {}),
     },
     select: {
       name: true,
@@ -41,6 +53,8 @@ export async function PATCH(request: NextRequest) {
       course: true,
       institution: true,
       sponsorConsent: true,
+      instagram: true,
+      profileVisibleToMembers: true,
     },
   });
 

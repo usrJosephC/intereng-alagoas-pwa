@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { clsx } from "clsx";
 import { CommentSection, type CommentData } from "@/components/comments/comment-section";
 
@@ -48,9 +49,12 @@ export function PostCard({
   return (
     <article className="steel-border rounded-sm bg-surface p-4">
       <div className="flex items-center justify-between">
-        <p className="font-heading text-sm font-semibold uppercase tracking-wide text-gold">
+        <Link
+          href={`/atletas/${post.author.id}`}
+          className="font-heading text-sm font-semibold uppercase tracking-wide text-gold hover:text-gold-soft"
+        >
           {post.author.name}
-        </p>
+        </Link>
         {canModerate && (
           <button
             onClick={handleDelete}

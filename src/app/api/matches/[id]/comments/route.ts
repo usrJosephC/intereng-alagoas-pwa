@@ -33,7 +33,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 
   const comment = await prisma.comment.create({
-    data: { content: parsed.data.content, matchId: id, authorId: session.sub },
+    data: {
+      content: parsed.data.content,
+      imageUrl: parsed.data.imageUrl || null,
+      matchId: id,
+      authorId: session.sub,
+    },
     include: { author: { select: { id: true, name: true } } },
   });
 

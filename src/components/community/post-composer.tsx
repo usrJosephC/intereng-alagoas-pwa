@@ -8,8 +8,30 @@ import type { PostData } from "./post-card";
 export function PostComposer({ onCreated }: { onCreated: (post: PostData) => void }) {
   const [content, setContent] = useState("");
   const [imageUrl, setImageUrl] = useState("");
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [photoError, setPhotoError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setUploadingPhoto(true);
+    setPhotoError(null);
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      const res = await fetch("/api/posts/photo", { method: "POST", body });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Não foi possível enviar a foto.");
+      setImageUrl(data.imageUrl);
+    } catch (err) {
+      setPhotoError(err instanceof Error ? err.message : "Não foi possível enviar a foto.");
+    } finally {
+      setUploadingPhoto(false);
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -44,12 +66,32 @@ export function PostComposer({ onCreated }: { onCreated: (post: PostData) => voi
         rows={3}
         className={`${inputClass} resize-none`}
       />
+      {imageUrl && (
+        <div className="relative">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={imageUrl}
+            alt=""
+            className="max-h-48 w-full rounded-sm border border-border object-cover"
+          />
+          <button
+            type="button"
+            onClick={() => setImageUrl("")}
+            className="absolute right-2 top-2 rounded-sm bg-surface/90 px-2 py-1 text-xs font-semibold text-danger"
+          >
+            Remover
+          </button>
+        </div>
+      )}
       <input
-        value={imageUrl}
-        onChange={(e) => setImageUrl(e.target.value)}
-        placeholder="Link de uma foto (opcional)"
+        type="file"
+        accept="image/*"
+        onChange={handlePhotoChange}
+        disabled={uploadingPhoto}
         className={inputClass}
       />
+      {uploadingPhoto && <p className="text-xs text-muted">Enviando foto...</p>}
+      {photoError && <p className="text-xs text-danger">{photoError}</p>}
       <Button type="submit" disabled={loading}>
         {loading ? "Publicando..." : "Publicar"}
       </Button>

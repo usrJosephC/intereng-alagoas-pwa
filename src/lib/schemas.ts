@@ -22,9 +22,20 @@ export const registerSchema = z.object({
   }),
 });
 
+/// imageUrl só aceita o que veio do nosso próprio upload (POST /api/posts/photo)
+/// — nunca uma URL externa arbitrária colada pelo usuário.
 export const postCreateSchema = z.object({
   content: z.string().trim().min(1).max(2000),
-  imageUrl: z.string().trim().url().max(2000).optional().or(z.literal("")),
+  imageUrl: z
+    .string()
+    .trim()
+    .url()
+    .max(2000)
+    .refine((url) => url.includes("/storage/v1/object/public/uploads/posts/"), {
+      error: "URL de imagem inválida.",
+    })
+    .optional()
+    .or(z.literal("")),
 });
 
 export const commentCreateSchema = z.object({

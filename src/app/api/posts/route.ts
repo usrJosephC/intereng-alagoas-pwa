@@ -23,9 +23,9 @@ export async function POST(request: NextRequest) {
       authorId: session.sub,
     },
     include: {
-      author: { select: { id: true, name: true } },
+      author: { select: { id: true, name: true, avatarUrl: true } },
       likes: true,
-      comments: { include: { author: { select: { id: true, name: true } } } },
+      comments: { include: { author: { select: { id: true, name: true, avatarUrl: true } } } },
     },
   });
 

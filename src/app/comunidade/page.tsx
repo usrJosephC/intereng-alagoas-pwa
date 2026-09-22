@@ -12,11 +12,11 @@ export default async function ComunidadePage() {
     orderBy: { createdAt: "desc" },
     take: 50,
     include: {
-      author: { select: { id: true, name: true } },
+      author: { select: { id: true, name: true, avatarUrl: true } },
       likes: true,
       comments: {
         orderBy: { createdAt: "asc" },
-        include: { author: { select: { id: true, name: true } } },
+        include: { author: { select: { id: true, name: true, avatarUrl: true } } },
       },
     },
   });

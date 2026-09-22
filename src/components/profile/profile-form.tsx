@@ -14,6 +14,8 @@ type User = {
   course: string | null;
   institution: string | null;
   sponsorConsent: boolean;
+  instagram: string | null;
+  profileVisibleToMembers: boolean;
 };
 
 export function ProfileForm({ user }: { user: User }) {
@@ -28,6 +30,10 @@ export function ProfileForm({ user }: { user: User }) {
   const [course, setCourse] = useState(user.course ?? "");
   const [institution, setInstitution] = useState(user.institution ?? "");
   const [sponsorConsent, setSponsorConsent] = useState(user.sponsorConsent);
+  const [instagram, setInstagram] = useState(user.instagram ?? "");
+  const [profileVisibleToMembers, setProfileVisibleToMembers] = useState(
+    user.profileVisibleToMembers
+  );
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -49,6 +55,8 @@ export function ProfileForm({ user }: { user: User }) {
           course,
           institution,
           sponsorConsent,
+          instagram,
+          profileVisibleToMembers,
         }),
       });
       const data = await res.json();
@@ -161,6 +169,15 @@ export function ProfileForm({ user }: { user: User }) {
             className={inputClass}
           />
         </div>
+        <div className="space-y-1.5 sm:col-span-2">
+          <label className={labelClass}>Instagram (opcional)</label>
+          <input
+            value={instagram}
+            onChange={(e) => setInstagram(e.target.value)}
+            placeholder="@seu_usuario"
+            className={inputClass}
+          />
+        </div>
       </div>
 
       <label className="flex items-start gap-2 text-sm text-muted">
@@ -173,6 +190,19 @@ export function ProfileForm({ user }: { user: User }) {
         <span>
           Compartilhar meus dados com o evento (organização e contato sobre patrocínio/parceiros).
           Você pode retirar esse consentimento a qualquer momento aqui.
+        </span>
+      </label>
+
+      <label className="flex items-start gap-2 text-sm text-muted">
+        <input
+          type="checkbox"
+          checked={profileVisibleToMembers}
+          onChange={(e) => setProfileVisibleToMembers(e.target.checked)}
+          className="mt-1"
+        />
+        <span>
+          Mostrar meu nome, curso, instituição e Instagram pra outros atletas logados no site.
+          Desligado por padrão — ninguém vê esses dados até você ativar.
         </span>
       </label>
 

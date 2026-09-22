@@ -38,8 +38,19 @@ export const postCreateSchema = z.object({
     .or(z.literal("")),
 });
 
+/// imageUrl só aceita o que veio do nosso próprio upload (POST /api/comments/photo).
 export const commentCreateSchema = z.object({
   content: z.string().trim().min(1).max(1000),
+  imageUrl: z
+    .string()
+    .trim()
+    .url()
+    .max(2000)
+    .refine((url) => url.includes("/storage/v1/object/public/uploads/comments/"), {
+      error: "URL de imagem inválida.",
+    })
+    .optional()
+    .or(z.literal("")),
 });
 
 /// logoUrl não entra aqui de propósito — é setado só via upload
@@ -98,6 +109,8 @@ export const profileUpdateSchema = z.object({
   course: z.string().trim().max(80).optional().or(z.literal("")),
   institution: z.string().trim().max(120).optional().or(z.literal("")),
   sponsorConsent: z.boolean().optional(),
+  instagram: z.string().trim().max(50).optional().or(z.literal("")),
+  profileVisibleToMembers: z.boolean().optional(),
 });
 
 export const forgotPasswordSchema = z.object({

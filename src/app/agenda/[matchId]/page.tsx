@@ -24,7 +24,7 @@ export default async function MatchDetailPage({
       venue: true,
       comments: {
         orderBy: { createdAt: "asc" },
-        include: { author: { select: { id: true, name: true } } },
+        include: { author: { select: { id: true, name: true, avatarUrl: true } } },
       },
     },
   });

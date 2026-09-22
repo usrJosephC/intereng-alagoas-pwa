@@ -19,7 +19,6 @@ export async function POST(request: NextRequest) {
     data: {
       name: parsed.data.name,
       shortName: parsed.data.shortName || null,
-      logoUrl: parsed.data.logoUrl || null,
     },
   });
 

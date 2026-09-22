@@ -14,18 +14,26 @@ type User = {
   course: string | null;
   institution: string | null;
   sponsorConsent: boolean;
+  instagram: string | null;
+  profileVisibleToMembers: boolean;
 };
 
 export function ProfileForm({ user }: { user: User }) {
   const router = useRouter();
   const [name, setName] = useState(user.name);
   const [avatarUrl, setAvatarUrl] = useState(user.avatarUrl ?? "");
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [photoError, setPhotoError] = useState<string | null>(null);
   const [phone, setPhone] = useState(user.phone ?? "");
   const [birthDate, setBirthDate] = useState(user.birthDate ? user.birthDate.slice(0, 10) : "");
   const [city, setCity] = useState(user.city ?? "");
   const [course, setCourse] = useState(user.course ?? "");
   const [institution, setInstitution] = useState(user.institution ?? "");
   const [sponsorConsent, setSponsorConsent] = useState(user.sponsorConsent);
+  const [instagram, setInstagram] = useState(user.instagram ?? "");
+  const [profileVisibleToMembers, setProfileVisibleToMembers] = useState(
+    user.profileVisibleToMembers
+  );
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -41,13 +49,14 @@ export function ProfileForm({ user }: { user: User }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name,
-          avatarUrl,
           phone,
           birthDate,
           city,
           course,
           institution,
           sponsorConsent,
+          instagram,
+          profileVisibleToMembers,
         }),
       });
       const data = await res.json();
@@ -59,6 +68,27 @@ export function ProfileForm({ user }: { user: User }) {
       router.refresh();
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // permite escolher o mesmo arquivo de novo depois
+    if (!file) return;
+    setUploadingPhoto(true);
+    setPhotoError(null);
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      const res = await fetch("/api/profile/photo", { method: "POST", body });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Não foi possível enviar a foto.");
+      setAvatarUrl(data.avatarUrl);
+      router.refresh();
+    } catch (err) {
+      setPhotoError(err instanceof Error ? err.message : "Não foi possível enviar a foto.");
+    } finally {
+      setUploadingPhoto(false);
     }
   }
 
@@ -81,13 +111,16 @@ export function ProfileForm({ user }: { user: User }) {
           </div>
         )}
         <div className="flex-1 space-y-1.5">
-          <label className={labelClass}>URL da foto (opcional)</label>
+          <label className={labelClass}>Foto de perfil (opcional)</label>
           <input
-            value={avatarUrl}
-            onChange={(e) => setAvatarUrl(e.target.value)}
+            type="file"
+            accept="image/*"
+            onChange={handlePhotoChange}
+            disabled={uploadingPhoto}
             className={inputClass}
-            placeholder="https://..."
           />
+          {uploadingPhoto && <p className="text-xs text-muted">Enviando foto...</p>}
+          {photoError && <p className="text-xs text-danger">{photoError}</p>}
         </div>
       </div>
 
@@ -136,6 +169,15 @@ export function ProfileForm({ user }: { user: User }) {
             className={inputClass}
           />
         </div>
+        <div className="space-y-1.5 sm:col-span-2">
+          <label className={labelClass}>Instagram (opcional)</label>
+          <input
+            value={instagram}
+            onChange={(e) => setInstagram(e.target.value)}
+            placeholder="@seu_usuario"
+            className={inputClass}
+          />
+        </div>
       </div>
 
       <label className="flex items-start gap-2 text-sm text-muted">
@@ -148,6 +190,19 @@ export function ProfileForm({ user }: { user: User }) {
         <span>
           Compartilhar meus dados com o evento (organização e contato sobre patrocínio/parceiros).
           Você pode retirar esse consentimento a qualquer momento aqui.
+        </span>
+      </label>
+
+      <label className="flex items-start gap-2 text-sm text-muted">
+        <input
+          type="checkbox"
+          checked={profileVisibleToMembers}
+          onChange={(e) => setProfileVisibleToMembers(e.target.checked)}
+          className="mt-1"
+        />
+        <span>
+          Mostrar meu nome, curso, instituição e Instagram pra outros atletas logados no site.
+          Desligado por padrão — ninguém vê esses dados até você ativar.
         </span>
       </label>
 

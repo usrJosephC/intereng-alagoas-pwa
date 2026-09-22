@@ -23,8 +23,13 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 
   const comment = await prisma.comment.create({
-    data: { content: parsed.data.content, postId: id, authorId: session.sub },
-    include: { author: { select: { id: true, name: true } } },
+    data: {
+      content: parsed.data.content,
+      imageUrl: parsed.data.imageUrl || null,
+      postId: id,
+      authorId: session.sub,
+    },
+    include: { author: { select: { id: true, name: true, avatarUrl: true } } },
   });
 
   return NextResponse.json({ comment }, { status: 201 });

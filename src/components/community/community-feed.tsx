@@ -8,10 +8,12 @@ export function CommunityFeed({
   initialPosts,
   loggedIn,
   canModerate,
+  currentUserId,
 }: {
   initialPosts: PostData[];
   loggedIn: boolean;
   canModerate: boolean;
+  currentUserId: string | null;
 }) {
   const [posts, setPosts] = useState(initialPosts);
 
@@ -44,6 +46,7 @@ export function CommunityFeed({
                 post={post}
                 loggedIn={loggedIn}
                 canModerate={canModerate}
+                currentUserId={currentUserId}
                 onDeleted={(id) => setPosts((prev) => prev.filter((p) => p.id !== id))}
               />
             </div>

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import type { Role } from "@prisma/client";
-import { SESSION_COOKIE, verifySessionToken } from "@/lib/auth";
+import { getActiveSessionFromToken, SESSION_COOKIE } from "@/lib/auth";
 import { roleHomePath } from "@/lib/roles";
 
 const PUBLIC_ADMIN_PATHS = new Set(["/admin/login", "/api/auth/login"]);
@@ -33,7 +33,7 @@ export async function proxy(request: NextRequest) {
   }
 
   const token = request.cookies.get(SESSION_COOKIE)?.value;
-  const session = token ? await verifySessionToken(token) : null;
+  const session = token ? await getActiveSessionFromToken(token) : null;
 
   if (!session) {
     if (pathname.startsWith("/api/")) {

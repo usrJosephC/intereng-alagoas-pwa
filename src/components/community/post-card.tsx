@@ -21,11 +21,13 @@ export function PostCard({
   post,
   loggedIn,
   canModerate,
+  currentUserId,
   onDeleted,
 }: {
   post: PostData;
   loggedIn: boolean;
   canModerate: boolean;
+  currentUserId: string | null;
   onDeleted: (id: string) => void;
 }) {
   const [liked, setLiked] = useState(post.likedByMe);
@@ -43,7 +45,7 @@ export function PostCard({
 
   async function handleDelete() {
     if (!confirm("Apagar este post?")) return;
-    const res = await fetch(`/api/admin/posts/${post.id}`, { method: "DELETE" });
+    const res = await fetch(`/api/posts/${post.id}`, { method: "DELETE" });
     if (res.ok) onDeleted(post.id);
   }
 
@@ -57,7 +59,7 @@ export function PostCard({
           <UserAvatar name={post.author.name} avatarUrl={post.author.avatarUrl} className="h-7 w-7" />
           {post.author.name}
         </Link>
-        {canModerate && (
+        {(canModerate || post.author.id === currentUserId) && (
           <button
             onClick={handleDelete}
             className="text-[11px] font-semibold uppercase text-danger hover:opacity-80"
@@ -101,6 +103,7 @@ export function PostCard({
             initialComments={post.comments}
             loggedIn={loggedIn}
             canModerate={canModerate}
+            currentUserId={currentUserId}
           />
         </div>
       )}

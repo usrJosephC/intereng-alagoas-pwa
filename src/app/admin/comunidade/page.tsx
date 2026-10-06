@@ -37,7 +37,7 @@ export default async function AdminComunidadePage() {
         Apague posts e comentários que violem as regras do evento.
       </p>
       <div className="mt-6">
-        <CommunityFeed initialPosts={postsData} loggedIn={false} canModerate />
+        <CommunityFeed initialPosts={postsData} loggedIn={false} canModerate currentUserId={null} />
       </div>
     </div>
   );

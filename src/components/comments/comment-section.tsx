@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { inputClass } from "@/lib/ui";
 import { UserAvatar } from "@/components/ui/user-avatar";
@@ -18,11 +18,13 @@ export function CommentSection({
   initialComments,
   loggedIn,
   canModerate,
+  currentUserId,
 }: {
   apiUrl: string;
   initialComments: CommentData[];
   loggedIn: boolean;
   canModerate: boolean;
+  currentUserId: string | null;
 }) {
   const [comments, setComments] = useState(initialComments);
   const [content, setContent] = useState("");
@@ -30,6 +32,14 @@ export function CommentSection({
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const contentRef = useRef<HTMLTextAreaElement>(null);
+
+  useLayoutEffect(() => {
+    const textarea = contentRef.current;
+    if (!textarea) return;
+    textarea.style.height = "auto";
+    textarea.style.height = `${textarea.scrollHeight}px`;
+  }, [content]);
 
   async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -53,7 +63,7 @@ export function CommentSection({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!content.trim()) return;
+    if (!content.trim() && !imageUrl) return;
     setLoading(true);
     setError(null);
     try {
@@ -76,7 +86,7 @@ export function CommentSection({
 
   async function handleDelete(id: string) {
     if (!confirm("Apagar este comentário?")) return;
-    const res = await fetch(`/api/admin/comments/${id}`, { method: "DELETE" });
+    const res = await fetch(`/api/comments/${id}`, { method: "DELETE" });
     if (res.ok) {
       setComments((prev) => prev.filter((c) => c.id !== id));
     }
@@ -99,7 +109,7 @@ export function CommentSection({
                 />
                 {comment.author.name}
               </Link>
-              {canModerate && (
+              {(canModerate || comment.author.id === currentUserId) && (
                 <button
                   onClick={() => handleDelete(comment.id)}
                   className="text-[11px] font-semibold uppercase text-danger hover:opacity-80"
@@ -145,11 +155,14 @@ export function CommentSection({
             </div>
           )}
           <div className="flex flex-col gap-2 sm:flex-row">
-            <input
+            <textarea
+              ref={contentRef}
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder="Escreva um comentário..."
-              className={inputClass}
+              maxLength={200}
+              rows={1}
+              className={`${inputClass} min-h-[44px] resize-none overflow-hidden`}
             />
             <input
               type="file"
@@ -160,7 +173,7 @@ export function CommentSection({
             />
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || (!content.trim() && !imageUrl)}
               className="min-h-[44px] shrink-0 rounded-sm bg-gold px-4 text-xs font-semibold uppercase tracking-wide text-black hover:bg-gold-soft disabled:opacity-50"
             >
               Comentar

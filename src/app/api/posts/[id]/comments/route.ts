@@ -24,7 +24,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   const comment = await prisma.comment.create({
     data: {
-      content: parsed.data.content,
+      content: parsed.data.content ?? "",
       imageUrl: parsed.data.imageUrl || null,
       postId: id,
       authorId: session.sub,

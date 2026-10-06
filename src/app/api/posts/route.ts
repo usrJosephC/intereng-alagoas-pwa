@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
 
   const post = await prisma.post.create({
     data: {
-      content: parsed.data.content,
+      content: parsed.data.content ?? "",
       imageUrl: parsed.data.imageUrl || null,
       authorId: session.sub,
     },

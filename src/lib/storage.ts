@@ -14,6 +14,21 @@ function getClient() {
   return createClient(url, key);
 }
 
+export async function removeImages(urls: Array<string | null | undefined>): Promise<void> {
+  const marker = `/storage/v1/object/public/${BUCKET}/`;
+  const paths = urls.flatMap((url) => {
+    if (!url) return [];
+    const index = url.indexOf(marker);
+    return index >= 0 ? [decodeURIComponent(url.slice(index + marker.length).split("?")[0])] : [];
+  });
+  if (paths.length === 0) return;
+
+  const client = getClient();
+  if (!client) throw new Error("Storage não configurado.");
+  const { error } = await client.storage.from(BUCKET).remove(paths);
+  if (error) throw new Error(error.message);
+}
+
 /**
  * Sobe `buffer` pro bucket `uploads` no caminho informado (upsert: substitui o
  * que já existir nesse caminho, então um mesmo usuário/atlética nunca acumula

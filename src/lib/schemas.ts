@@ -6,15 +6,15 @@ export const loginSchema = z.object({
 });
 
 export const registerSchema = z.object({
-  name: z.string().trim().min(2).max(80),
-  email: z.string().trim().toLowerCase().email(),
+  name: z.string().trim().min(2).max(200),
+  email: z.string().trim().toLowerCase().email().max(200),
   password: z.string().min(6).max(72),
   atleticaId: z.string().cuid().optional().or(z.literal("")),
   phone: z.string().trim().max(30).optional().or(z.literal("")),
   birthDate: z.string().trim().max(10).optional().or(z.literal("")),
-  city: z.string().trim().max(80).optional().or(z.literal("")),
-  course: z.string().trim().max(80).optional().or(z.literal("")),
-  institution: z.string().trim().max(120).optional().or(z.literal("")),
+  city: z.string().trim().max(200).optional().or(z.literal("")),
+  course: z.string().trim().max(200).optional().or(z.literal("")),
+  institution: z.string().trim().max(200).optional().or(z.literal("")),
   /// Obrigatório: sem consentimento explícito não dá pra criar conta (ver o
   /// texto/checkbox no formulário de cadastro).
   sponsorConsent: z.literal(true, {
@@ -25,7 +25,7 @@ export const registerSchema = z.object({
 /// imageUrl só aceita o que veio do nosso próprio upload (POST /api/posts/photo)
 /// — nunca uma URL externa arbitrária colada pelo usuário.
 export const postCreateSchema = z.object({
-  content: z.string().trim().min(1).max(2000),
+  content: z.string().trim().max(200).optional().or(z.literal("")),
   imageUrl: z
     .string()
     .trim()
@@ -40,7 +40,7 @@ export const postCreateSchema = z.object({
 
 /// imageUrl só aceita o que veio do nosso próprio upload (POST /api/comments/photo).
 export const commentCreateSchema = z.object({
-  content: z.string().trim().min(1).max(1000),
+  content: z.string().trim().max(200).optional().or(z.literal("")),
   imageUrl: z
     .string()
     .trim()
@@ -51,6 +51,10 @@ export const commentCreateSchema = z.object({
     })
     .optional()
     .or(z.literal("")),
+}).refine((comment) => Boolean(comment.content?.trim() || comment.imageUrl), {
+  error: "Escreva um comentário ou envie uma foto.",
+}).refine((post) => Boolean(post.content?.trim() || post.imageUrl), {
+  error: "Escreva uma publicação ou envie uma foto.",
 });
 
 /// logoUrl não entra aqui de propósito — é setado só via upload
@@ -102,15 +106,19 @@ export const userCreateSchema = z.object({
 /// avatarUrl não entra aqui de propósito — é setado só via upload
 /// (POST /api/profile/photo), nunca por URL arbitrária no corpo.
 export const profileUpdateSchema = z.object({
-  name: z.string().trim().min(2).max(80),
+  name: z.string().trim().min(2).max(200),
   phone: z.string().trim().max(30).optional().or(z.literal("")),
   birthDate: z.string().trim().max(10).optional().or(z.literal("")),
-  city: z.string().trim().max(80).optional().or(z.literal("")),
-  course: z.string().trim().max(80).optional().or(z.literal("")),
-  institution: z.string().trim().max(120).optional().or(z.literal("")),
+  city: z.string().trim().max(200).optional().or(z.literal("")),
+  course: z.string().trim().max(200).optional().or(z.literal("")),
+  institution: z.string().trim().max(200).optional().or(z.literal("")),
   sponsorConsent: z.boolean().optional(),
   instagram: z.string().trim().max(50).optional().or(z.literal("")),
   profileVisibleToMembers: z.boolean().optional(),
+});
+
+export const accountDeletionSchema = z.object({
+  confirmation: z.literal("EXCLUIR"),
 });
 
 export const forgotPasswordSchema = z.object({

@@ -2,6 +2,7 @@ import { SignJWT, jwtVerify } from "jose";
 import bcrypt from "bcryptjs";
 import { cookies } from "next/headers";
 import type { Role } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 
 const VALID_ROLES: Role[] = ["MASTER", "ADMIN", "ORGANIZADOR", "SUMULA", "MEMBER"];
 
@@ -62,6 +63,14 @@ export async function verifySessionToken(token: string): Promise<SessionPayload 
   }
 }
 
+export async function getActiveSessionFromToken(token: string): Promise<SessionPayload | null> {
+  const session = await verifySessionToken(token);
+  if (!session) return null;
+
+  const user = await prisma.user.findUnique({ where: { id: session.sub }, select: { id: true } });
+  return user ? session : null;
+}
+
 /**
  * Lê e valida a sessão a partir do cookie da requisição atual. `src/proxy.ts` já
  * bloqueia rotas `/admin` sem sessão de ADMIN; isto é usado para obter os dados da
@@ -71,7 +80,7 @@ export async function getSession(): Promise<SessionPayload | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE)?.value;
   if (!token) return null;
-  return verifySessionToken(token);
+  return getActiveSessionFromToken(token);
 }
 
 export const sessionCookieOptions = {

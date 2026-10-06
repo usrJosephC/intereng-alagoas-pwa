@@ -8,6 +8,11 @@ import { PasswordInput } from "@/components/ui/password-input";
 
 type Atletica = { id: string; name: string };
 
+const months = [
+  "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
+];
+
 export function RegisterForm({ atleticas }: { atleticas: Atletica[] }) {
   const router = useRouter();
   const [name, setName] = useState("");
@@ -15,16 +20,30 @@ export function RegisterForm({ atleticas }: { atleticas: Atletica[] }) {
   const [password, setPassword] = useState("");
   const [atleticaId, setAtleticaId] = useState("");
   const [phone, setPhone] = useState("");
-  const [birthDate, setBirthDate] = useState("");
+  const [birthDay, setBirthDay] = useState("");
+  const [birthMonth, setBirthMonth] = useState("");
+  const [birthYear, setBirthYear] = useState("");
   const [city, setCity] = useState("");
   const [course, setCourse] = useState("");
   const [institution, setInstitution] = useState("");
   const [sponsorConsent, setSponsorConsent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const currentYear = new Date().getFullYear();
+  const daysInMonth = birthMonth
+    ? new Date(Number(birthYear) || currentYear, Number(birthMonth), 0).getDate()
+    : 31;
+  const dateStarted = Boolean(birthDay || birthMonth || birthYear);
+  const birthDate = birthDay && birthMonth && birthYear
+    ? `${birthYear}-${birthMonth.padStart(2, "0")}-${birthDay.padStart(2, "0")}`
+    : "";
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (dateStarted && !birthDate) {
+      setError("Preencha dia, mês e ano de nascimento ou deixe os três vazios.");
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -63,6 +82,7 @@ export function RegisterForm({ atleticas }: { atleticas: Atletica[] }) {
         <label className={labelClass}>Nome</label>
         <input
           required
+          maxLength={200}
           value={name}
           onChange={(e) => setName(e.target.value)}
           className={inputClass}
@@ -74,6 +94,7 @@ export function RegisterForm({ atleticas }: { atleticas: Atletica[] }) {
         <input
           type="email"
           required
+          maxLength={200}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className={inputClass}
@@ -111,6 +132,7 @@ export function RegisterForm({ atleticas }: { atleticas: Atletica[] }) {
           <label className={labelClass}>Telefone (opcional)</label>
           <input
             type="tel"
+            maxLength={30}
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             className={inputClass}
@@ -118,18 +140,65 @@ export function RegisterForm({ atleticas }: { atleticas: Atletica[] }) {
             placeholder="(82) 9xxxx-xxxx"
           />
         </div>
-        <div className="space-y-1.5">
-          <label className={labelClass}>Data de nascimento (opcional)</label>
-          <input
-            type="date"
-            value={birthDate}
-            onChange={(e) => setBirthDate(e.target.value)}
-            className={inputClass}
-          />
+        <div className="min-w-0 space-y-1.5 sm:col-span-2">
+          <span className={labelClass}>Data de nascimento (opcional)</span>
+          <div className="grid grid-cols-3 gap-2">
+            <select
+              aria-label="Dia de nascimento"
+              value={birthDay}
+              onChange={(e) => setBirthDay(e.target.value)}
+              className={`${inputClass} min-w-0 px-2`}
+            >
+              <option value="">Dia</option>
+              {Array.from({ length: daysInMonth }, (_, index) => index + 1).map((day) => (
+                <option key={day} value={day}>{day}</option>
+              ))}
+            </select>
+            <select
+              aria-label="Mês de nascimento"
+              value={birthMonth}
+              onChange={(e) => {
+                const month = e.target.value;
+                if (birthDay && month && Number(birthDay) > new Date(Number(birthYear) || currentYear, Number(month), 0).getDate()) setBirthDay("");
+                setBirthMonth(month);
+              }}
+              className={`${inputClass} min-w-0 px-2`}
+            >
+              <option value="">Mês</option>
+              {months.map((month, index) => (
+                <option key={month} value={index + 1}>{month}</option>
+              ))}
+            </select>
+            <select
+              aria-label="Ano de nascimento"
+              value={birthYear}
+              onChange={(e) => {
+                const year = e.target.value;
+                if (birthDay && birthMonth && Number(birthDay) > new Date(Number(year) || currentYear, Number(birthMonth), 0).getDate()) setBirthDay("");
+                setBirthYear(year);
+              }}
+              className={`${inputClass} min-w-0 px-2`}
+            >
+              <option value="">Ano</option>
+              {Array.from({ length: currentYear - 1899 }, (_, index) => currentYear - index).map((year) => (
+                <option key={year} value={year}>{year}</option>
+              ))}
+            </select>
+          </div>
+          {dateStarted && (
+            <button
+              type="button"
+              onClick={() => { setBirthDay(""); setBirthMonth(""); setBirthYear(""); }}
+              className="min-h-[44px] text-xs font-semibold text-muted underline hover:text-gold"
+            >
+              Limpar data
+            </button>
+          )}
         </div>
         <div className="space-y-1.5">
           <label className={labelClass}>Cidade (opcional)</label>
           <input
+            maxLength={200}
             value={city}
             onChange={(e) => setCity(e.target.value)}
             className={inputClass}
@@ -138,14 +207,22 @@ export function RegisterForm({ atleticas }: { atleticas: Atletica[] }) {
         </div>
         <div className="space-y-1.5">
           <label className={labelClass}>Curso (opcional)</label>
-          <input value={course} onChange={(e) => setCourse(e.target.value)} className={inputClass} />
+          <textarea
+            maxLength={200}
+            rows={2}
+            value={course}
+            onChange={(e) => setCourse(e.target.value)}
+            className={`${inputClass} resize-y`}
+          />
         </div>
         <div className="space-y-1.5 sm:col-span-2">
           <label className={labelClass}>Instituição de ensino (opcional)</label>
-          <input
+          <textarea
+            maxLength={200}
+            rows={2}
             value={institution}
             onChange={(e) => setInstitution(e.target.value)}
-            className={inputClass}
+            className={`${inputClass} resize-y`}
           />
         </div>
       </div>

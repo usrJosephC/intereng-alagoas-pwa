@@ -44,6 +44,7 @@ export default async function ComunidadePage() {
           initialPosts={postsData}
           loggedIn={!!session}
           canModerate={!!session && canAccessAdmin(session.role)}
+          currentUserId={session?.sub ?? null}
         />
       </div>
     </div>

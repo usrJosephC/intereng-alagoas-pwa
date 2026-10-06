@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { inputClass } from "@/lib/ui";
 import { Button } from "@/components/ui/button";
 import type { PostData } from "./post-card";
@@ -12,6 +12,14 @@ export function PostComposer({ onCreated }: { onCreated: (post: PostData) => voi
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const contentRef = useRef<HTMLTextAreaElement>(null);
+
+  useLayoutEffect(() => {
+    const textarea = contentRef.current;
+    if (!textarea) return;
+    textarea.style.height = "auto";
+    textarea.style.height = `${textarea.scrollHeight}px`;
+  }, [content]);
 
   async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -35,7 +43,7 @@ export function PostComposer({ onCreated }: { onCreated: (post: PostData) => voi
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!content.trim()) return;
+    if (!content.trim() && !imageUrl) return;
     setLoading(true);
     setError(null);
     try {
@@ -60,11 +68,13 @@ export function PostComposer({ onCreated }: { onCreated: (post: PostData) => voi
     <form onSubmit={handleSubmit} className="steel-border space-y-3 rounded-sm bg-surface p-4">
       {error && <p className="text-xs text-danger">{error}</p>}
       <textarea
+        ref={contentRef}
         value={content}
         onChange={(e) => setContent(e.target.value)}
         placeholder="Compartilhe algo com a torcida do InterEng..."
-        rows={3}
-        className={`${inputClass} resize-none`}
+        maxLength={200}
+        rows={1}
+        className={`${inputClass} min-h-[44px] resize-none overflow-hidden`}
       />
       {imageUrl && (
         <div className="relative">
@@ -92,7 +102,7 @@ export function PostComposer({ onCreated }: { onCreated: (post: PostData) => voi
       />
       {uploadingPhoto && <p className="text-xs text-muted">Enviando foto...</p>}
       {photoError && <p className="text-xs text-danger">{photoError}</p>}
-      <Button type="submit" disabled={loading}>
+      <Button type="submit" disabled={loading || (!content.trim() && !imageUrl)}>
         {loading ? "Publicando..." : "Publicar"}
       </Button>
     </form>

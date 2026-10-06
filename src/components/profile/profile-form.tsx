@@ -25,18 +25,23 @@ export function ProfileForm({ user }: { user: User }) {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [phone, setPhone] = useState(user.phone ?? "");
-  const [birthDate, setBirthDate] = useState(user.birthDate ? user.birthDate.slice(0, 10) : "");
+  const [birthDate, setBirthDate] = useState(
+    user.birthDate ? user.birthDate.slice(0, 10) : "",
+  );
   const [city, setCity] = useState(user.city ?? "");
   const [course, setCourse] = useState(user.course ?? "");
   const [institution, setInstitution] = useState(user.institution ?? "");
   const [sponsorConsent, setSponsorConsent] = useState(user.sponsorConsent);
   const [instagram, setInstagram] = useState(user.instagram ?? "");
   const [profileVisibleToMembers, setProfileVisibleToMembers] = useState(
-    user.profileVisibleToMembers
+    user.profileVisibleToMembers,
   );
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deletionConfirmation, setDeletionConfirmation] = useState("");
+  const [deletionError, setDeletionError] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -82,13 +87,41 @@ export function ProfileForm({ user }: { user: User }) {
       body.append("file", file);
       const res = await fetch("/api/profile/photo", { method: "POST", body });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Não foi possível enviar a foto.");
+      if (!res.ok)
+        throw new Error(data.error || "Não foi possível enviar a foto.");
       setAvatarUrl(data.avatarUrl);
       router.refresh();
     } catch (err) {
-      setPhotoError(err instanceof Error ? err.message : "Não foi possível enviar a foto.");
+      setPhotoError(
+        err instanceof Error ? err.message : "Não foi possível enviar a foto.",
+      );
     } finally {
       setUploadingPhoto(false);
+    }
+  }
+
+  async function handleDeleteAccount() {
+    if (deletionConfirmation !== "EXCLUIR") return;
+
+    setDeleting(true);
+    setDeletionError(null);
+    try {
+      const res = await fetch("/api/profile", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirmation: deletionConfirmation }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        setDeletionError(data?.error || "Não foi possível excluir a conta.");
+        return;
+      }
+      router.replace("/");
+      router.refresh();
+    } catch {
+      setDeletionError("Não foi possível excluir a conta.");
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -119,7 +152,9 @@ export function ProfileForm({ user }: { user: User }) {
             disabled={uploadingPhoto}
             className={inputClass}
           />
-          {uploadingPhoto && <p className="text-xs text-muted">Enviando foto...</p>}
+          {uploadingPhoto && (
+            <p className="text-xs text-muted">Enviando foto...</p>
+          )}
           {photoError && <p className="text-xs text-danger">{photoError}</p>}
         </div>
       </div>
@@ -155,11 +190,19 @@ export function ProfileForm({ user }: { user: User }) {
         </div>
         <div className="space-y-1.5">
           <label className={labelClass}>Cidade</label>
-          <input value={city} onChange={(e) => setCity(e.target.value)} className={inputClass} />
+          <input
+            value={city}
+            onChange={(e) => setCity(e.target.value)}
+            className={inputClass}
+          />
         </div>
         <div className="space-y-1.5">
           <label className={labelClass}>Curso</label>
-          <input value={course} onChange={(e) => setCourse(e.target.value)} className={inputClass} />
+          <input
+            value={course}
+            onChange={(e) => setCourse(e.target.value)}
+            className={inputClass}
+          />
         </div>
         <div className="space-y-1.5 sm:col-span-2">
           <label className={labelClass}>Instituição de ensino</label>
@@ -188,8 +231,9 @@ export function ProfileForm({ user }: { user: User }) {
           className="mt-1"
         />
         <span>
-          Compartilhar meus dados com o evento (organização e contato sobre patrocínio/parceiros).
-          Você pode retirar esse consentimento a qualquer momento aqui.
+          Compartilhar meus dados com o evento (organização e contato sobre
+          patrocínio/parceiros). Você pode retirar esse consentimento a qualquer
+          momento aqui.
         </span>
       </label>
 
@@ -201,14 +245,56 @@ export function ProfileForm({ user }: { user: User }) {
           className="mt-1"
         />
         <span>
-          Mostrar meu nome, curso, instituição e Instagram pra outros atletas logados no site.
-          Desligado por padrão — ninguém vê esses dados até você ativar.
+          Mostrar meu nome, curso, instituição e Instagram pra outros atletas
+          logados no site. Desligado por padrão — ninguém vê esses dados até
+          você ativar.
         </span>
       </label>
 
       <Button type="submit" disabled={saving} className="w-full">
         {saving ? "Salvando..." : "Salvar alterações"}
       </Button>
+
+      <section
+        className="space-y-3 border-t border-border pt-5"
+        aria-labelledby="delete-account-title"
+      >
+        <div>
+          <h2
+            id="delete-account-title"
+            className="text-sm font-semibold uppercase tracking-wide text-danger"
+          >
+            Excluir conta
+          </h2>
+          <p className="mt-1 text-xs text-muted">
+            Esta ação é permanente e remove seus dados, publicações, comentários
+            e curtidas.
+          </p>
+        </div>
+        <label className={labelClass} htmlFor="delete-account-confirmation">
+          Digite &quot;EXCLUIR&quot; para confirmar
+        </label>
+        <input
+          id="delete-account-confirmation"
+          value={deletionConfirmation}
+          onChange={(e) => setDeletionConfirmation(e.target.value)}
+          className={inputClass}
+          autoComplete="off"
+          disabled={deleting}
+        />
+        {deletionError && (
+          <p className="text-sm text-danger">{deletionError}</p>
+        )}
+        <Button
+          type="button"
+          variant="danger"
+          disabled={deleting || deletionConfirmation !== "EXCLUIR"}
+          onClick={handleDeleteAccount}
+          className="w-full"
+        >
+          {deleting ? "Excluindo..." : "Excluir minha conta"}
+        </Button>
+      </section>
     </form>
   );
 }

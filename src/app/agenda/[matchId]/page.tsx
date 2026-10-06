@@ -83,6 +83,7 @@ export default async function MatchDetailPage({
             }))}
             loggedIn={!!session}
             canModerate={!!session && canAccessAdmin(session.role)}
+            currentUserId={session?.sub ?? null}
           />
         </div>
       </div>

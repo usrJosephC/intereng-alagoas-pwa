@@ -76,3 +76,12 @@ Snapshot do repositório `https://github.com/usrJosephC/intereng-alagoas-pwa`, c
 ## Ponto de partida para as próximas mudanças
 
 Usar a branch `feat/foto-comentario-perfil-social` no commit `41ac5d5` como base. O artifact corresponde ao repositório InterEng Alagoas PWA. Antes de considerar esta rodada pronta, corrigir os dois bloqueios funcionais acima e executar testes manuais de cadastro, comentários, exclusão de conteúdo e exclusão de conta.
+
+## Estado de entrega
+
+- Branch de correções: `fix/ajustes-comunidade-cadastro`
+- Commit: `c0ad400` — `fix: ajustar uploads, comentarios e cadastro`
+- PR para `dev`: [#9](https://github.com/usrJosephC/intereng-alagoas-pwa/pull/9)
+- PR de release `dev` → `main`: [#10](https://github.com/usrJosephC/intereng-alagoas-pwa/pull/10)
+- Ambas as PRs foram abertas sem coautoria de IA; o merge permanece sob autorização do responsável.
+- Validações da rodada: `npm run lint`, `npx tsc --noEmit --incremental false` e `git diff --check` aprovados.

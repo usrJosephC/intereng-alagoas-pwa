@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { inputClass, labelClass } from "@/lib/ui";
 import { Button } from "@/components/ui/button";
+import { FeedbackMessage } from "@/components/ui/feedback-message";
 
 type User = {
   name: string;
@@ -18,6 +19,11 @@ type User = {
   profileVisibleToMembers: boolean;
 };
 
+const months = [
+  "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
+];
+
 export function ProfileForm({ user }: { user: User }) {
   const router = useRouter();
   const [name, setName] = useState(user.name);
@@ -25,9 +31,10 @@ export function ProfileForm({ user }: { user: User }) {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [phone, setPhone] = useState(user.phone ?? "");
-  const [birthDate, setBirthDate] = useState(
-    user.birthDate ? user.birthDate.slice(0, 10) : "",
-  );
+  const initialBirthDate = user.birthDate ? user.birthDate.slice(0, 10) : "";
+  const [birthDay, setBirthDay] = useState(initialBirthDate.slice(8, 10));
+  const [birthMonth, setBirthMonth] = useState(initialBirthDate.slice(5, 7));
+  const [birthYear, setBirthYear] = useState(initialBirthDate.slice(0, 4));
   const [city, setCity] = useState(user.city ?? "");
   const [course, setCourse] = useState(user.course ?? "");
   const [institution, setInstitution] = useState(user.institution ?? "");
@@ -42,9 +49,21 @@ export function ProfileForm({ user }: { user: User }) {
   const [deletionConfirmation, setDeletionConfirmation] = useState("");
   const [deletionError, setDeletionError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const currentYear = new Date().getFullYear();
+  const daysInMonth = birthMonth
+    ? new Date(Number(birthYear) || currentYear, Number(birthMonth), 0).getDate()
+    : 31;
+  const dateStarted = Boolean(birthDay || birthMonth || birthYear);
+  const birthDate = birthDay && birthMonth && birthYear
+    ? `${birthYear}-${birthMonth.padStart(2, "0")}-${birthDay.padStart(2, "0")}`
+    : "";
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (dateStarted && !birthDate) {
+      setError("Preencha dia, mês e ano de nascimento ou deixe os três vazios.");
+      return;
+    }
     setSaving(true);
     setError(null);
     setSaved(false);
@@ -71,6 +90,8 @@ export function ProfileForm({ user }: { user: User }) {
       }
       setSaved(true);
       router.refresh();
+    } catch {
+      setError("Não foi possível salvar. Tente novamente.");
     } finally {
       setSaving(false);
     }
@@ -116,7 +137,7 @@ export function ProfileForm({ user }: { user: User }) {
         setDeletionError(data?.error || "Não foi possível excluir a conta.");
         return;
       }
-      router.replace("/");
+      router.replace("/?contaExcluida=1");
       router.refresh();
     } catch {
       setDeletionError("Não foi possível excluir a conta.");
@@ -127,8 +148,9 @@ export function ProfileForm({ user }: { user: User }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {error && <p className="text-sm text-danger">{error}</p>}
-      {saved && <p className="text-sm text-success">Perfil atualizado.</p>}
+      {saving && <FeedbackMessage tone="loading">Salvando perfil...</FeedbackMessage>}
+      {error && <FeedbackMessage tone="error">{error}</FeedbackMessage>}
+      {saved && <FeedbackMessage tone="success">Perfil atualizado com sucesso.</FeedbackMessage>}
 
       <div className="flex items-center gap-3">
         {avatarUrl ? (
@@ -179,14 +201,31 @@ export function ProfileForm({ user }: { user: User }) {
             className={inputClass}
           />
         </div>
-        <div className="space-y-1.5">
-          <label className={labelClass}>Data de nascimento</label>
-          <input
-            type="date"
-            value={birthDate}
-            onChange={(e) => setBirthDate(e.target.value)}
-            className={inputClass}
-          />
+        <div className="min-w-0 space-y-1.5 sm:col-span-2">
+          <span className={labelClass}>Data de nascimento</span>
+          <div className="grid grid-cols-3 gap-2">
+            <select aria-label="Dia de nascimento" value={birthDay} onChange={(e) => setBirthDay(e.target.value)} className={`${inputClass} min-w-0 px-2`}>
+              <option value="">Dia</option>
+              {Array.from({ length: daysInMonth }, (_, index) => index + 1).map((day) => <option key={day} value={String(day).padStart(2, "0")}>{day}</option>)}
+            </select>
+            <select aria-label="Mês de nascimento" value={birthMonth} onChange={(e) => {
+              const month = e.target.value;
+              if (birthDay && month && Number(birthDay) > new Date(Number(birthYear) || currentYear, Number(month), 0).getDate()) setBirthDay("");
+              setBirthMonth(month);
+            }} className={`${inputClass} min-w-0 px-2`}>
+              <option value="">Mês</option>
+              {months.map((month, index) => <option key={month} value={String(index + 1).padStart(2, "0")}>{month}</option>)}
+            </select>
+            <select aria-label="Ano de nascimento" value={birthYear} onChange={(e) => {
+              const year = e.target.value;
+              if (birthDay && birthMonth && Number(birthDay) > new Date(Number(year) || currentYear, Number(birthMonth), 0).getDate()) setBirthDay("");
+              setBirthYear(year);
+            }} className={`${inputClass} min-w-0 px-2`}>
+              <option value="">Ano</option>
+              {Array.from({ length: currentYear - 1899 }, (_, index) => currentYear - index).map((year) => <option key={year} value={String(year)}>{year}</option>)}
+            </select>
+          </div>
+          {dateStarted && <button type="button" onClick={() => { setBirthDay(""); setBirthMonth(""); setBirthYear(""); }} className="min-h-[44px] text-xs font-semibold text-muted underline hover:text-gold">Limpar data</button>}
         </div>
         <div className="space-y-1.5">
           <label className={labelClass}>Cidade</label>
@@ -282,9 +321,8 @@ export function ProfileForm({ user }: { user: User }) {
           autoComplete="off"
           disabled={deleting}
         />
-        {deletionError && (
-          <p className="text-sm text-danger">{deletionError}</p>
-        )}
+        {deleting && <FeedbackMessage tone="loading">Excluindo conta...</FeedbackMessage>}
+        {deletionError && <FeedbackMessage tone="error">{deletionError}</FeedbackMessage>}
         <Button
           type="button"
           variant="danger"

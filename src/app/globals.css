@@ -60,6 +60,17 @@ body {
   color: #14120a;
 }
 
+/* Mantém o foco perceptível em teclado e toque assistido, inclusive nos
+   controles nativos (inputs e selects) compartilhados pelos formulários. */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
 .font-heading {
   font-family: var(--font-heading), var(--font-sans), system-ui, sans-serif;
 }

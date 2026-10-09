@@ -5,6 +5,7 @@ import Link from "next/link";
 import { clsx } from "clsx";
 import { CommentSection, type CommentData } from "@/components/comments/comment-section";
 import { UserAvatar } from "@/components/ui/user-avatar";
+import { FeedbackMessage } from "@/components/ui/feedback-message";
 
 export type PostData = {
   id: string;
@@ -33,6 +34,9 @@ export function PostCard({
   const [liked, setLiked] = useState(post.likedByMe);
   const [likeCount, setLikeCount] = useState(post.likeCount);
   const [showComments, setShowComments] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   async function toggleLike() {
     if (!loggedIn) return;
@@ -44,9 +48,17 @@ export function PostCard({
   }
 
   async function handleDelete() {
-    if (!confirm("Apagar este post?")) return;
-    const res = await fetch(`/api/posts/${post.id}`, { method: "DELETE" });
-    if (res.ok) onDeleted(post.id);
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      const res = await fetch(`/api/posts/${post.id}`, { method: "DELETE" });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(data?.error || "Não foi possível excluir o post.");
+      onDeleted(post.id);
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : "Não foi possível excluir o post.");
+      setDeleting(false);
+    }
   }
 
   return (
@@ -61,13 +73,27 @@ export function PostCard({
         </Link>
         {(canModerate || post.author.id === currentUserId) && (
           <button
-            onClick={handleDelete}
+            onClick={() => setConfirmingDelete(true)}
+            disabled={deleting}
             className="text-[11px] font-semibold uppercase text-danger hover:opacity-80"
           >
-            Apagar
+            {deleting ? "Excluindo..." : "Apagar"}
           </button>
         )}
       </div>
+      {confirmingDelete && (
+        <div className="mt-3 flex flex-wrap items-center gap-2 rounded-sm border border-danger/40 bg-danger/10 p-3 text-sm text-foreground">
+          <span>Excluir este post?</span>
+          <button type="button" onClick={handleDelete} disabled={deleting} className="font-semibold text-danger disabled:opacity-50">
+            {deleting ? "Excluindo..." : "Confirmar exclusão"}
+          </button>
+          <button type="button" onClick={() => setConfirmingDelete(false)} disabled={deleting} className="text-muted underline disabled:opacity-50">
+            Cancelar
+          </button>
+        </div>
+      )}
+      {deleting && <FeedbackMessage tone="loading">Excluindo post...</FeedbackMessage>}
+      {deleteError && <FeedbackMessage tone="error">{deleteError}</FeedbackMessage>}
 
       <p className="mt-2 whitespace-pre-wrap text-sm text-foreground">{post.content}</p>
 

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { PostComposer } from "./post-composer";
 import { PostCard, type PostData } from "./post-card";
+import { FeedbackMessage } from "@/components/ui/feedback-message";
 
 export function CommunityFeed({
   initialPosts,
@@ -16,6 +17,7 @@ export function CommunityFeed({
   currentUserId: string | null;
 }) {
   const [posts, setPosts] = useState(initialPosts);
+  const [deleted, setDeleted] = useState(false);
 
   return (
     <div className="space-y-4">
@@ -30,6 +32,7 @@ export function CommunityFeed({
           Entre para publicar, curtir e comentar no mural da torcida.
         </p>
       )}
+      {deleted && <FeedbackMessage tone="success">Post excluído com sucesso.</FeedbackMessage>}
 
       {posts.length === 0 ? (
         <p className="steel-border rounded-sm bg-surface p-4 text-sm text-muted">
@@ -47,7 +50,10 @@ export function CommunityFeed({
                 loggedIn={loggedIn}
                 canModerate={canModerate}
                 currentUserId={currentUserId}
-                onDeleted={(id) => setPosts((prev) => prev.filter((p) => p.id !== id))}
+                onDeleted={(id) => {
+                  setPosts((prev) => prev.filter((p) => p.id !== id));
+                  setDeleted(true);
+                }}
               />
             </div>
           ))}

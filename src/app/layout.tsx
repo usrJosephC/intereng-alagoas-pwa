@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Oswald } from "next/font/google";
 import localFont from "next/font/local";
 import { ServiceWorkerRegister } from "@/components/pwa/sw-register";
+import { InstallPrompt } from "@/components/pwa/install-prompt";
 import { SiteHeader } from "@/components/nav/site-header";
 import { SiteFooter } from "@/components/nav/site-footer";
 import { MobileTabBar } from "@/components/nav/mobile-tab-bar";
@@ -68,6 +69,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <SiteFooter />
         <MobileTabBar />
         <ServiceWorkerRegister />
+        <InstallPrompt />
       </body>
     </html>
   );

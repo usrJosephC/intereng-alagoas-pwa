@@ -4,6 +4,7 @@ import { useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { inputClass } from "@/lib/ui";
 import { UserAvatar } from "@/components/ui/user-avatar";
+import { FeedbackMessage } from "@/components/ui/feedback-message";
 
 export type CommentData = {
   id: string;
@@ -32,6 +33,9 @@ export function CommentSection({
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null);
   const contentRef = useRef<HTMLTextAreaElement>(null);
 
   useLayoutEffect(() => {
@@ -66,6 +70,7 @@ export function CommentSection({
     if (!content.trim() && !imageUrl) return;
     setLoading(true);
     setError(null);
+    setSuccess(null);
     try {
       const res = await fetch(apiUrl, {
         method: "POST",
@@ -77,6 +82,7 @@ export function CommentSection({
       setComments((prev) => [...prev, data.comment]);
       setContent("");
       setImageUrl("");
+      setSuccess("Comentário publicado com sucesso.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Não foi possível comentar.");
     } finally {
@@ -85,15 +91,29 @@ export function CommentSection({
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("Apagar este comentário?")) return;
-    const res = await fetch(`/api/comments/${id}`, { method: "DELETE" });
-    if (res.ok) {
+    setDeletingId(id);
+    setError(null);
+    setSuccess(null);
+    try {
+      const res = await fetch(`/api/comments/${id}`, { method: "DELETE" });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(data?.error || "Não foi possível excluir o comentário.");
       setComments((prev) => prev.filter((c) => c.id !== id));
+      setConfirmingDeleteId(null);
+      setSuccess("Comentário excluído com sucesso.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Não foi possível excluir o comentário.");
+    } finally {
+      setDeletingId(null);
     }
   }
 
   return (
     <div className="space-y-3">
+      {loading && <FeedbackMessage tone="loading">Publicando comentário...</FeedbackMessage>}
+      {deletingId && <FeedbackMessage tone="loading">Excluindo comentário...</FeedbackMessage>}
+      {error && <FeedbackMessage tone="error">{error}</FeedbackMessage>}
+      {success && <FeedbackMessage tone="success">{success}</FeedbackMessage>}
       <ul className="space-y-2">
         {comments.map((comment) => (
           <li key={comment.id} className="steel-border rounded-sm bg-surface-elevated p-3">
@@ -111,13 +131,25 @@ export function CommentSection({
               </Link>
               {(canModerate || comment.author.id === currentUserId) && (
                 <button
-                  onClick={() => handleDelete(comment.id)}
+                  onClick={() => setConfirmingDeleteId(comment.id)}
+                  disabled={deletingId !== null}
                   className="text-[11px] font-semibold uppercase text-danger hover:opacity-80"
                 >
-                  Apagar
+                  {deletingId === comment.id ? "Excluindo..." : "Apagar"}
                 </button>
               )}
             </div>
+            {confirmingDeleteId === comment.id && (
+              <div className="mt-2 flex flex-wrap items-center gap-2 rounded-sm border border-danger/40 bg-danger/10 p-2 text-xs text-foreground">
+                <span>Excluir este comentário?</span>
+                <button type="button" onClick={() => handleDelete(comment.id)} disabled={deletingId !== null} className="font-semibold text-danger disabled:opacity-50">
+                  {deletingId === comment.id ? "Excluindo..." : "Confirmar exclusão"}
+                </button>
+                <button type="button" onClick={() => setConfirmingDeleteId(null)} disabled={deletingId !== null} className="text-muted underline disabled:opacity-50">
+                  Cancelar
+                </button>
+              </div>
+            )}
             <p className="mt-1 text-sm text-foreground">{comment.content}</p>
             {comment.imageUrl && (
               // eslint-disable-next-line @next/next/no-img-element
@@ -136,7 +168,6 @@ export function CommentSection({
 
       {loggedIn ? (
         <form onSubmit={handleSubmit} className="space-y-2">
-          {error && <p className="text-xs text-danger">{error}</p>}
           {imageUrl && (
             <div className="relative w-fit">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -173,10 +204,10 @@ export function CommentSection({
             />
             <button
               type="submit"
-              disabled={loading || (!content.trim() && !imageUrl)}
+              disabled={loading || uploadingPhoto || (!content.trim() && !imageUrl)}
               className="min-h-[44px] shrink-0 rounded-sm bg-gold px-4 text-xs font-semibold uppercase tracking-wide text-black hover:bg-gold-soft disabled:opacity-50"
             >
-              Comentar
+              {loading ? "Publicando..." : "Comentar"}
             </button>
           </div>
           {uploadingPhoto && <p className="text-xs text-muted">Enviando foto...</p>}

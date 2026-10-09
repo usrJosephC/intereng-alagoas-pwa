@@ -3,6 +3,7 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { inputClass } from "@/lib/ui";
 import { Button } from "@/components/ui/button";
+import { FeedbackMessage } from "@/components/ui/feedback-message";
 import type { PostData } from "./post-card";
 
 export function PostComposer({ onCreated }: { onCreated: (post: PostData) => void }) {
@@ -12,6 +13,7 @@ export function PostComposer({ onCreated }: { onCreated: (post: PostData) => voi
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
   const contentRef = useRef<HTMLTextAreaElement>(null);
 
   useLayoutEffect(() => {
@@ -46,6 +48,7 @@ export function PostComposer({ onCreated }: { onCreated: (post: PostData) => voi
     if (!content.trim() && !imageUrl) return;
     setLoading(true);
     setError(null);
+    setSuccess(false);
     try {
       const res = await fetch("/api/posts", {
         method: "POST",
@@ -57,6 +60,7 @@ export function PostComposer({ onCreated }: { onCreated: (post: PostData) => voi
       onCreated(data.post);
       setContent("");
       setImageUrl("");
+      setSuccess(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Não foi possível publicar.");
     } finally {
@@ -66,7 +70,9 @@ export function PostComposer({ onCreated }: { onCreated: (post: PostData) => voi
 
   return (
     <form onSubmit={handleSubmit} className="steel-border space-y-3 rounded-sm bg-surface p-4">
-      {error && <p className="text-xs text-danger">{error}</p>}
+      {loading && <FeedbackMessage tone="loading">Publicando post...</FeedbackMessage>}
+      {error && <FeedbackMessage tone="error">{error}</FeedbackMessage>}
+      {success && <FeedbackMessage tone="success">Post publicado com sucesso.</FeedbackMessage>}
       <textarea
         ref={contentRef}
         value={content}

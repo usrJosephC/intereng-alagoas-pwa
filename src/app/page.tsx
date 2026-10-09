@@ -4,10 +4,21 @@ import { HeroBackdrop } from "@/components/three/hero-backdrop";
 import { LinkButton } from "@/components/ui/button";
 import { SPORTS, SPORT_LABELS, SPORT_SLUGS } from "@/lib/sports";
 import { SportIconImage } from "@/components/ui/sport-icon-image";
+import { FeedbackMessage } from "@/components/ui/feedback-message";
 
-export default function HomePage() {
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ contaExcluida?: string }>;
+}) {
+  const { contaExcluida } = await searchParams;
   return (
     <div>
+      {contaExcluida === "1" && (
+        <div className="mx-auto max-w-3xl px-4 pt-6">
+          <FeedbackMessage tone="success">Conta excluída com sucesso.</FeedbackMessage>
+        </div>
+      )}
       <section className="relative mx-auto flex max-w-3xl flex-col items-center overflow-hidden px-4 py-14 text-center sm:py-20">
         <HeroBackdrop />
         <LogoMark className="h-24 sm:h-28" />

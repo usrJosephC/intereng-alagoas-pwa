@@ -72,13 +72,13 @@ export async function SiteHeader() {
           <>
             <Link
               href="/login"
-              className="min-h-[40px] rounded-sm border border-border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide hover:border-gold hover:text-gold"
+              className="inline-flex h-10 items-center justify-center rounded-sm border border-border px-3 text-xs font-semibold uppercase leading-none tracking-wide hover:border-gold hover:text-gold"
             >
               Entrar
             </Link>
             <Link
               href="/cadastro"
-              className="min-h-[40px] rounded-sm bg-gold px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-black hover:bg-gold-soft"
+              className="inline-flex h-10 items-center justify-center rounded-sm bg-gold px-3 text-xs font-semibold uppercase leading-none tracking-wide text-black hover:bg-gold-soft"
             >
               Cadastrar
             </Link>
@@ -114,7 +114,7 @@ export async function SiteHeader() {
       ) : (
         <Link
           href="/login"
-          className="sm:hidden min-h-[36px] rounded-sm border border-border px-3 py-1 text-xs font-semibold uppercase tracking-wide hover:border-gold hover:text-gold"
+          className="inline-flex h-9 items-center justify-center rounded-sm border border-border px-3 text-xs font-semibold uppercase leading-none tracking-wide hover:border-gold hover:text-gold sm:hidden"
         >
           Entrar
         </Link>

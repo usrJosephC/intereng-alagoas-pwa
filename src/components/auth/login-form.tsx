@@ -33,6 +33,12 @@ export function LoginForm({ redirectAfter }: { redirectAfter?: string }) {
         setError(data.error || "Não foi possível entrar.");
         return;
       }
+      try {
+        localStorage.setItem("intereng-install-eligible", "1");
+      } catch {
+        // Storage may be unavailable in private browsing.
+      }
+      window.dispatchEvent(new Event("intereng-login-success"));
       const from = searchParams.get("from");
       const isAdminish =
         data.role === "MASTER" ||
